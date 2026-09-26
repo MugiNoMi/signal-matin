@@ -1,0 +1,51 @@
+[project]
+name = "signal-matin"
+version = "1.0.0"
+description = "Genere chaque matin un journal personnel A4 pour remplacer le scroll du telephone."
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [{name = "Signal Matin contributors"}]
+keywords = ["newspaper", "pdf", "rss", "calendar", "productivity", "print"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+  "icalendar>=6.1",
+  "playwright>=1.48",
+  "pydantic>=2.9",
+  "pypdf>=5.0",
+  "python-dotenv>=1.0",
+  "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+google = [
+  "google-api-python-client>=2.150",
+  "google-auth-httplib2>=0.2",
+  "google-auth-oauthlib>=1.2",
+]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+signal-matin = "signal_matin.cli:main"
+generate-morning-paper = "signal_matin.cli:main"
+
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/signal_matin"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/signal_matin/assets/signal_matin.css" = "signal_matin/assets/signal_matin.css"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

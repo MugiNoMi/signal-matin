@@ -1,0 +1,65 @@
+# Copie vers config.yaml. Le mode demo garantit un premier rendu immediat.
+demo: true
+
+paper:
+  title: "Signal Matin"
+  subtitle: "Le journal anti-scroll"
+  motto: "Voir clair avant de voir l'ecran."
+
+modules:
+  weather: true
+  calendar: true
+  tasks: true
+  news: true
+  tech: true
+  rss: true
+  games: true
+  tech_vocabulary: true
+  recommendations: true
+
+weather:
+  location: ""
+  latitude: null
+  longitude: null
+
+calendar:
+  ics: []
+  # - name: "Agenda personnel"
+  #   source: "calendars/agenda.ics" # chemin local ou URL privee placee seulement ici
+  google:
+    enabled: false
+    calendar_id: "primary"
+    credentials_file: "${GOOGLE_CREDENTIALS_FILE}"
+    token_file: "${GOOGLE_TOKEN_FILE}"
+
+tasks:
+  priorities: []
+  # - title: "Finaliser le dossier"
+  #   importance: "high"
+  reminders: []
+
+news:
+  limit: 12
+  max_age_hours: 72
+  feeds: []
+  # - name: "Nom du media"
+  #   category: "Monde"
+  #   url: "https://exemple.org/rss.xml"
+
+tech:
+  limit: 6
+  max_age_hours: 96
+  feeds: []
+
+recommendations: []
+personal:
+  greeting: "Bonjour."
+  note: ""
+  free_window: ""
+  quote:
+    text: ""
+    author: ""
+
+printing:
+  printer: ""
+  duplex: false
