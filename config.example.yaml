@@ -63,3 +63,16 @@ personal:
 printing:
   printer: ""
   duplex: false
+
+# Envoi par email : impression à distance (HP ePrint, Epson Connect...) et/ou
+# copie dans ta boîte. Activé avec : signal-matin generate --email
+# Les identifiants restent dans .env (SMTP_USERNAME, SMTP_PASSWORD).
+email:
+  smtp_host: "smtp.gmail.com"
+  smtp_port: 587            # 587 = STARTTLS, 465 = SSL
+  username: "${SMTP_USERNAME}"
+  password: "${SMTP_PASSWORD}"
+  from: "${SMTP_USERNAME}"
+  printer_to: []            # ex. ["xxxx@hpeprint.com"] : reçoit uniquement le PDF
+  copy_to: []               # ex. ["moi@example.org"] : PDF + petit message
+  alert_to: []              # en cas d'échec ; vide = même chose que copy_to

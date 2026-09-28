@@ -19,6 +19,7 @@ from .ereader_server import (
     reader_urls,
     serve_reader,
 )
+from .mailer import build_alert_message, build_edition_messages, load_email_settings, send
 from .mock_data import construire_demo
 from .normalizer import charger_edition, ecrire_edition, normaliser_edition
 from .pdf import generer_pdf
@@ -106,6 +107,11 @@ def build_parser() -> argparse.ArgumentParser:
         _common(command)
         if name == "preview":
             command.add_argument("--no-open", action="store_true")
+        if name == "generate":
+            command.add_argument(
+                "--email", action="store_true",
+                help="envoie le PDF aux adresses de la section email (et une alerte en cas d'échec)",
+            )
         if name == "print":
             command.add_argument("--printer", default="")
             command.add_argument("--duplex", action="store_true")
@@ -218,6 +224,30 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.input and args.demo:
         raise SystemExit("Choisis --input ou --demo, pas les deux.")
+    if getattr(args, "email", False):
+        return _generate_and_email(args, config)
+    return _produce(args, config)
+
+
+def _generate_and_email(args, config: dict) -> int:
+    email_settings = load_email_settings(config)
+    try:
+        _produce(args, config)
+        pdf_path, _, _ = _paths(args.date, args.output)
+        send(email_settings, build_edition_messages(email_settings, pdf_path, args.date))
+    except Exception as error:
+        if email_settings.alert_to:
+            try:
+                send(email_settings, [build_alert_message(email_settings, args.date, error)])
+            except Exception as alert_error:  # l'alerte ne masque pas l'erreur d'origine
+                print(f"Alerte email impossible : {alert_error}", file=sys.stderr)
+        raise
+    recipients = email_settings.printer_to + email_settings.copy_to
+    print(f"Édition envoyée par email à : {', '.join(recipients)}")
+    return 0
+
+
+def _produce(args, config: dict) -> int:
     edition = _edition(args, config)
     pdf_path, html_path, data_path = _paths(args.date, args.output)
     ecrire_edition(edition, data_path)
