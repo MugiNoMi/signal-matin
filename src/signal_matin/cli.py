@@ -10,6 +10,14 @@ from pathlib import Path
 from .config import ROOT, load_config, setting
 from .connectors.google_calendar import authorize_google
 from .ereader import SCREEN_PROFILES, generer_epub, generer_pdf_liseuse
+from .ereader_server import (
+    DailyPublisher,
+    ReaderLibrary,
+    ensure_access_token,
+    parse_refresh_time,
+    reader_urls,
+    serve_reader,
+)
 from .mock_data import construire_demo
 from .normalizer import charger_edition, ecrire_edition, normaliser_edition
 from .pdf import generer_pdf
@@ -111,6 +119,23 @@ def build_parser() -> argparse.ArgumentParser:
         "--screen", choices=tuple(SCREEN_PROFILES), default="medium",
         help="taille du PDF e-ink; sans effet sur l'EPUB reformatable",
     )
+    serve = sub.add_parser(
+        "serve", help="publie l'édition liseuse sur une page privée du réseau local")
+    serve.add_argument("--config", default="config.yaml", help="fichier YAML local")
+    serve.add_argument("--mode", choices=("auto", "compact", "standard", "extended"), default="auto")
+    group = serve.add_mutually_exclusive_group()
+    group.add_argument("--demo", action="store_true", help="force les données fictives")
+    group.add_argument("--live", action="store_true", help="force les connecteurs configurés")
+    serve.add_argument("--host", default="127.0.0.1", help="0.0.0.0 pour autoriser le Wi-Fi local")
+    serve.add_argument("--port", type=int, default=8844)
+    serve.add_argument("--refresh-at", default="08:00", help="mise à jour quotidienne HH:MM")
+    serve.add_argument("--format", choices=("epub", "both"), default="epub")
+    serve.add_argument("--screen", choices=tuple(SCREEN_PROFILES), default="medium")
+    serve.add_argument("--output-dir", default="output/ereader")
+    serve.add_argument(
+        "--show-url-only", action="store_true",
+        help="affiche le favori privé sans démarrer un second serveur",
+    )
     auth = sub.add_parser("auth-google", help="connecte Google Calendar en lecture seule")
     auth.add_argument("--config", default="config.yaml")
     return parser
@@ -122,6 +147,56 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "auth-google":
         token = authorize_google(setting(config, "calendar.google", {}) or {}, ROOT)
         print(f"Jeton OAuth enregistre localement: {token}")
+        return 0
+    if args.command == "serve":
+        output_dir = Path(args.output_dir)
+        if not output_dir.is_absolute():
+            output_dir = ROOT / output_dir
+        library = ReaderLibrary(output_dir)
+        token = ensure_access_token(output_dir)
+        try:
+            refresh_at = parse_refresh_time(args.refresh_at)
+        except ValueError as error:
+            raise SystemExit(str(error)) from error
+
+        urls = reader_urls(args.host, args.port, token)
+        if args.show_url_only:
+            print("Favori privé Signal Matin :")
+            for url in urls:
+                print(f"  {url}")
+            return 0
+
+        def publish(date: dt.date) -> None:
+            publication_args = argparse.Namespace(
+                input=None,
+                demo=args.demo,
+                live=args.live,
+                date=date,
+                mode=args.mode,
+            )
+            edition = _edition(publication_args, config)
+            epub_path = output_dir / f"{date.isoformat()}-signal-matin.epub"
+            generer_epub(edition, epub_path)
+            if args.format == "both":
+                generer_pdf_liseuse(
+                    edition,
+                    output_dir / f"{date.isoformat()}-signal-matin-eink.pdf",
+                    profile=args.screen,
+                )
+            _, _, data_path = _paths(date)
+            ecrire_edition(edition, data_path)
+            print(f"Édition liseuse actualisée : {epub_path}", flush=True)
+
+        publisher = DailyPublisher(library, publish, refresh_at)
+        publisher.start()
+        print("Signal Matin est disponible sur le réseau local :", flush=True)
+        for url in urls:
+            print(f"  {url}", flush=True)
+        print("Enregistre cette adresse dans les favoris de la liseuse.", flush=True)
+        try:
+            serve_reader(library, host=args.host, port=args.port, token=token)
+        finally:
+            publisher.stop()
         return 0
     if args.input and args.demo:
         raise SystemExit("Choisis --input ou --demo, pas les deux.")

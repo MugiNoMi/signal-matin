@@ -61,3 +61,14 @@ def test_cli_exposes_ereader_formats_and_screen_profiles():
     assert args.command == "ereader"
     assert args.format == "both"
     assert args.screen == "small"
+
+
+def test_cli_exposes_private_reader_server():
+    args = build_parser().parse_args([
+        "serve", "--live", "--host", "0.0.0.0", "--port", "8844",
+        "--refresh-at", "08:00", "--show-url-only",
+    ])
+    assert args.command == "serve"
+    assert args.host == "0.0.0.0"
+    assert args.port == 8844
+    assert args.show_url_only is True
