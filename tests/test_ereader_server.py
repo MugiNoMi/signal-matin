@@ -1,15 +1,19 @@
 import datetime as dt
 import threading
+from http.cookiejar import CookieJar
 from http.server import ThreadingHTTPServer
 from urllib.error import HTTPError
-from urllib.request import urlopen
+from urllib.parse import urlencode
+from urllib.request import HTTPCookieProcessor, Request, build_opener, urlopen
 
 import pytest
 
 from signal_matin.ereader_server import (
     DailyPublisher,
     ReaderLibrary,
+    consume_pairing_code,
     ensure_access_token,
+    ensure_pairing_code,
     make_handler,
     parse_refresh_time,
     render_library_page,
@@ -24,6 +28,16 @@ def test_access_token_is_created_once_and_not_served(tmp_path):
     assert all(item.path.name != ".access-token" for item in ReaderLibrary(tmp_path).files())
 
 
+def test_pairing_code_is_short_temporary_and_single_use(tmp_path):
+    code = ensure_pairing_code(tmp_path)
+    assert len(code) == 6
+    assert code.isdigit()
+    assert ensure_pairing_code(tmp_path) == code
+    assert consume_pairing_code(tmp_path, "000000") is False
+    assert consume_pairing_code(tmp_path, code) is True
+    assert consume_pairing_code(tmp_path, code) is False
+
+
 def test_library_page_links_only_generated_reader_files(tmp_path):
     epub = tmp_path / "2026-09-28-signal-matin.epub"
     epub.write_bytes(b"epub-content")
@@ -35,7 +49,7 @@ def test_library_page_links_only_generated_reader_files(tmp_path):
     assert "config.yaml" not in page
 
 
-def test_http_server_requires_token_and_downloads_epub(tmp_path):
+def test_http_server_pairs_with_short_code_and_downloads_epub(tmp_path):
     epub = tmp_path / "2026-09-28-signal-matin.epub"
     epub.write_bytes(b"epub-content")
     server = ThreadingHTTPServer(
@@ -43,19 +57,28 @@ def test_http_server_requires_token_and_downloads_epub(tmp_path):
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     base = f"http://127.0.0.1:{server.server_port}"
+    pairing_code = ensure_pairing_code(tmp_path)
+    opener = build_opener(HTTPCookieProcessor(CookieJar()))
     try:
-        with pytest.raises(HTTPError) as error:
-            urlopen(base + "/", timeout=2)
-        assert error.value.code == 401
-        with urlopen(base + "/?token=private-token", timeout=2) as response:
+        with urlopen(base + "/", timeout=2) as response:
+            assert "Associer cette liseuse" in response.read().decode("utf-8")
+        request = Request(
+            base + "/pair",
+            data=urlencode({"code": pairing_code}).encode("ascii"),
+            method="POST",
+        )
+        with opener.open(request, timeout=2) as response:
             assert response.status == 200
             assert "Signal Matin" in response.read().decode("utf-8")
-        with urlopen(
-            base + "/download/2026-09-28-signal-matin.epub?token=private-token",
+        with opener.open(
+            base + "/download/2026-09-28-signal-matin.epub",
             timeout=2,
         ) as response:
             assert response.headers.get_content_type() == "application/epub+zip"
             assert response.read() == b"epub-content"
+        with pytest.raises(HTTPError) as error:
+            urlopen(base + "/download/2026-09-28-signal-matin.epub", timeout=2)
+        assert error.value.code == 401
     finally:
         server.shutdown()
         server.server_close()

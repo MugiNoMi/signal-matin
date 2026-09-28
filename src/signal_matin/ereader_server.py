@@ -14,6 +14,7 @@ import threading
 import time
 from dataclasses import dataclass
 from http import HTTPStatus
+from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Callable
@@ -21,6 +22,7 @@ from urllib.parse import parse_qs, quote, urlsplit
 
 
 TOKEN_FILE = ".access-token"
+PAIRING_FILE = ".pairing-code.json"
 SUPPORTED_SUFFIXES = {".epub", ".pdf"}
 
 
@@ -44,6 +46,47 @@ def ensure_access_token(directory: Path) -> str:
     token = secrets.token_urlsafe(32)
     path.write_text(token, encoding="utf-8")
     return token
+
+
+def ensure_pairing_code(directory: Path, *, lifetime_minutes: int = 60) -> str:
+    """Retourne un code court, temporaire et consommable une seule fois."""
+    directory.mkdir(parents=True, exist_ok=True)
+    path = directory / PAIRING_FILE
+    now = dt.datetime.now(dt.timezone.utc)
+    if path.exists():
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            expires_at = dt.datetime.fromisoformat(str(payload["expires_at"]))
+            code = str(payload["code"])
+            if expires_at > now and len(code) == 6 and code.isdigit():
+                return code
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+            pass
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    payload = {
+        "code": code,
+        "expires_at": (now + dt.timedelta(minutes=lifetime_minutes)).isoformat(),
+    }
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    return code
+
+
+def consume_pairing_code(directory: Path, supplied: str) -> bool:
+    path = directory / PAIRING_FILE
+    if not path.exists():
+        return False
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        expires_at = dt.datetime.fromisoformat(str(payload["expires_at"]))
+        valid = (
+            expires_at > dt.datetime.now(dt.timezone.utc)
+            and secrets.compare_digest(str(payload["code"]), supplied)
+        )
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+        valid = False
+    if valid:
+        path.unlink(missing_ok=True)
+    return valid
 
 
 def _edition_date(path: Path) -> dt.date | None:
@@ -134,6 +177,25 @@ small{{display:block;margin-top:2rem}}
     return body.encode("utf-8")
 
 
+def render_pairing_page(*, invalid: bool = False) -> bytes:
+    error = "<p><strong>Code incorrect ou expiré.</strong></p>" if invalid else ""
+    body = f"""<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Associer Signal Matin</title><style>
+body{{max-width:32rem;margin:10vh auto;padding:0 1.4rem;color:#111;background:#fff;
+font-family:Georgia,serif;line-height:1.55}}h1{{font-size:2rem;line-height:1.05}}
+label,input,button{{display:block;width:100%;box-sizing:border-box}}
+input{{font-size:1.6rem;letter-spacing:.25em;padding:.7rem;margin:.7rem 0}}
+button{{padding:1rem;border:2px solid #111;background:#111;color:#fff;font-weight:bold}}
+</style></head><body><h1>Associer cette liseuse</h1>
+<p>Saisis le code temporaire à 6 chiffres affiché par Signal Matin.</p>{error}
+<form method="post" action="/pair"><label for="code">Code</label>
+<input id="code" name="code" inputmode="numeric" pattern="[0-9]{{6}}" maxlength="6" required>
+<button type="submit">Associer la liseuse</button></form></body></html>"""
+    return body.encode("utf-8")
+
+
 def make_handler(library: ReaderLibrary, token: str) -> type[BaseHTTPRequestHandler]:
     class ReaderHandler(BaseHTTPRequestHandler):
         server_version = "SignalMatinReader/1.0"
@@ -144,7 +206,11 @@ def make_handler(library: ReaderLibrary, token: str) -> type[BaseHTTPRequestHand
 
         def _authorized(self, query: dict[str, list[str]]) -> bool:
             supplied = (query.get("token") or [""])[0]
-            return secrets.compare_digest(supplied, token)
+            if supplied and secrets.compare_digest(supplied, token):
+                return True
+            cookie = SimpleCookie(self.headers.get("Cookie", ""))
+            saved = cookie.get("signal_matin")
+            return bool(saved and secrets.compare_digest(saved.value, token))
 
         def _send(self, status: HTTPStatus, content_type: str, body: bytes) -> None:
             self.send_response(status)
@@ -163,6 +229,13 @@ def make_handler(library: ReaderLibrary, token: str) -> type[BaseHTTPRequestHand
                 self._send(HTTPStatus.OK, "application/json; charset=utf-8", body)
                 return
             query = parse_qs(request.query)
+            if request.path == "/" and not self._authorized(query):
+                self._send(
+                    HTTPStatus.OK,
+                    "text/html; charset=utf-8",
+                    render_pairing_page(),
+                )
+                return
             if not self._authorized(query):
                 self._send(
                     HTTPStatus.UNAUTHORIZED,
@@ -201,6 +274,33 @@ def make_handler(library: ReaderLibrary, token: str) -> type[BaseHTTPRequestHand
                 self.wfile.write(body)
                 return
             self._send(HTTPStatus.NOT_FOUND, "text/plain; charset=utf-8", b"Introuvable")
+
+        def do_POST(self) -> None:  # noqa: N802 - API BaseHTTPRequestHandler
+            request = urlsplit(self.path)
+            if request.path != "/pair":
+                self._send(HTTPStatus.NOT_FOUND, "text/plain; charset=utf-8", b"Introuvable")
+                return
+            try:
+                length = min(int(self.headers.get("Content-Length", "0")), 1024)
+            except ValueError:
+                length = 0
+            form = parse_qs(self.rfile.read(length).decode("utf-8", errors="replace"))
+            supplied = (form.get("code") or [""])[0].strip()
+            if not consume_pairing_code(library.directory, supplied):
+                self._send(
+                    HTTPStatus.UNAUTHORIZED,
+                    "text/html; charset=utf-8",
+                    render_pairing_page(invalid=True),
+                )
+                return
+            self.send_response(HTTPStatus.SEE_OTHER)
+            self.send_header("Location", "/")
+            self.send_header(
+                "Set-Cookie",
+                f"signal_matin={token}; Path=/; Max-Age=31536000; HttpOnly; SameSite=Strict",
+            )
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
 
     return ReaderHandler
 
@@ -272,12 +372,12 @@ def local_ipv4_addresses() -> list[str]:
     return sorted(addresses)
 
 
-def reader_urls(host: str, port: int, token: str) -> list[str]:
+def reader_urls(host: str, port: int, token: str | None = None) -> list[str]:
     hosts = local_ipv4_addresses() if host in {"0.0.0.0", "::"} else [host]
     if not hosts:
         hosts = ["127.0.0.1"]
-    encoded = quote(token)
-    return [f"http://{address}:{port}/?token={encoded}" for address in hosts]
+    suffix = f"?token={quote(token)}" if token else ""
+    return [f"http://{address}:{port}/{suffix}" for address in hosts]
 
 
 def serve_reader(

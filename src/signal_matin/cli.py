@@ -14,6 +14,7 @@ from .ereader_server import (
     DailyPublisher,
     ReaderLibrary,
     ensure_access_token,
+    ensure_pairing_code,
     parse_refresh_time,
     reader_urls,
     serve_reader,
@@ -158,16 +159,18 @@ def main(argv: list[str] | None = None) -> int:
             output_dir = ROOT / output_dir
         library = ReaderLibrary(output_dir)
         token = ensure_access_token(output_dir)
+        pairing_code = ensure_pairing_code(output_dir)
         try:
             refresh_at = parse_refresh_time(args.refresh_at)
         except ValueError as error:
             raise SystemExit(str(error)) from error
 
-        urls = reader_urls(args.host, args.port, token)
+        urls = reader_urls(args.host, args.port)
         if args.show_url_only:
-            print("Favori privé Signal Matin :")
+            print("Adresse Signal Matin :")
             for url in urls:
                 print(f"  {url}")
+            print(f"Code d'association temporaire : {pairing_code}")
             return 0
 
         def publish(date: dt.date) -> None:
@@ -206,7 +209,8 @@ def main(argv: list[str] | None = None) -> int:
         print("Signal Matin est disponible sur le réseau local :", flush=True)
         for url in urls:
             print(f"  {url}", flush=True)
-        print("Enregistre cette adresse dans les favoris de la liseuse.", flush=True)
+        print(f"Code d'association temporaire : {pairing_code}", flush=True)
+        print("Associe la liseuse, puis enregistre cette adresse dans ses favoris.", flush=True)
         try:
             serve_reader(library, host=args.host, port=args.port, token=token)
         finally:

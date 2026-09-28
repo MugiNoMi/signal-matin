@@ -17,6 +17,7 @@ htmlcov/
 output/*
 !output/.gitkeep
 **/.access-token
+**/.pairing-code.json
 tmp/*
 !tmp/.gitkeep
 .DS_Store

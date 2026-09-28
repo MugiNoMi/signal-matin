@@ -90,13 +90,19 @@ Test manuel :
 signal-matin serve --live --host 0.0.0.0 --port 8844 --refresh-at 08:00
 ```
 
-La commande affiche une adresse privée contenant un jeton aléatoire. Depuis la
-liseuse connectée au **même Wi-Fi** :
+La commande affiche une adresse locale courte et un code temporaire à six
+chiffres. Depuis la liseuse connectée au **même Wi-Fi** :
 
 1. ouvre le navigateur ;
-2. recopie l'adresse affichée par Signal Matin ;
-3. enregistre cette page dans les favoris ;
-4. touche **Télécharger l'EPUB** chaque matin.
+2. recopie seulement l'adresse courte affichée par Signal Matin ;
+3. saisis une fois le code à six chiffres ;
+4. après l'association, enregistre cette page dans les favoris ;
+5. touche **Télécharger l'EPUB** chaque matin.
+
+Le code expire après une heure et disparaît dès sa première utilisation. La
+liseuse conserve ensuite localement un cookie d'accès pendant un an. Il n'est
+donc plus nécessaire de recopier le long jeton privé. Pour associer un nouvel
+appareil, relance `--show-url-only` afin de créer un nouveau code temporaire.
 
 L'édition est créée au démarrage si celle du jour manque, puis actualisée à
 l'heure choisie. La liseuse n'a pas besoin d'être branchée en USB. En revanche,
@@ -153,11 +159,12 @@ profil **Privé**.
 
 ### Règles de sécurité
 
-- ne transfère jamais l'adresse complète avec son jeton sur un forum ou dans le
-  dépôt Git ;
+- ne publie jamais le jeton historique, le code d'association ou les fichiers
+  personnels sur un forum ou dans le dépôt Git ;
 - utilise cette fonction uniquement sur un Wi-Fi de confiance ;
 - n'ouvre jamais ce port sur la box et ne crée pas de redirection Internet ;
-- les fichiers de sortie et le jeton `.access-token` sont ignorés par Git ;
+- les fichiers de sortie, le jeton `.access-token` et le code temporaire sont
+  ignorés par Git ;
 - pour révoquer le favori, arrête le serveur, supprime localement
   `output/ereader/.access-token`, puis redémarre-le.
 
