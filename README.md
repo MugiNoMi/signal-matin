@@ -4,39 +4,39 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-2f3437)](https://www.python.org/downloads/)
 [![Licence MIT](https://img.shields.io/badge/licence-MIT-66705f)](LICENSE)
 
-Un petit quotidien personnel A4, genere le matin pour remplacer le premier
-scroll du telephone. Il assemble uniquement les sources choisies, compose un
-vrai journal monochrome et peut produire un PDF ou l'envoyer a l'imprimante.
+Un petit quotidien personnel A4, généré le matin pour remplacer le premier
+scroll du téléphone. Il assemble uniquement les sources choisies, compose un
+vrai journal monochrome et peut produire un PDF ou l'envoyer à l'imprimante.
 
-![Apercu de la une](docs/images/demo-page-1.png)
+![Aperçu de la une](docs/images/demo-page-1.png)
 
 > **Pour essayer, aucune API, aucun compte et aucune imprimante ne sont
-> necessaires.** Le mode demo fonctionne avec des donnees fictives.
+> nécessaires.** Le mode démo fonctionne avec des données fictives.
 
 ## Ce que Signal Matin peut contenir
 
-- meteo, agenda, priorites, taches et rappels ;
-- actualites generales avec breves, articles developpes et pages focus ;
-- actualites IA / tech, flux RSS, veille et recommandations ;
-- mot francais, vocabulaire tech, quiz, calcul mental et mots croises ;
-- trois densites : `compact`, `standard` et `extended` ;
+- météo, agenda, priorités, tâches et rappels ;
+- actualités générales avec brèves, articles développés et pages focus ;
+- actualités IA / tech, flux RSS, veille et recommandations ;
+- mot français, vocabulaire tech, quiz, calcul mental et mots croisés ;
+- trois densités : `compact`, `standard` et `extended` ;
 - pagination adaptative : si une rubrique est plus longue, une vraie page de
-  suite est creee au lieu de couper le texte ou de tout rapetisser ;
-- apercu navigateur, PDF A4, impression facultative et recto verso ;
+  suite est créée au lieu de couper le texte ou de tout rapetisser ;
+- aperçu navigateur, PDF A4, impression facultative et recto verso ;
 - lancement quotidien sous Windows, macOS ou Linux.
 
-## Installation ultra simple — debutants
+## Installation ultra simple — débutants
 
-### 1. Recuperer le projet
+### 1. Récupérer le projet
 
-La methode sans Git :
+La méthode sans Git :
 
 1. clique sur le bouton vert **Code** en haut de cette page ;
 2. choisis **Download ZIP** ;
-3. decompresse le ZIP ;
+3. décompresse le ZIP ;
 4. ouvre le dossier `signal-matin` obtenu.
 
-Ou, si Git est deja installe :
+Ou, si Git est déjà installé :
 
 ```bash
 git clone https://github.com/sosoj92/signal-matin.git
@@ -45,26 +45,26 @@ cd signal-matin
 
 ### 2. Installer Python
 
-Installe [Python 3.11 ou plus recent](https://www.python.org/downloads/).
+Installe [Python 3.11 ou plus récent](https://www.python.org/downloads/).
 
-Sous Windows, coche **Add Python to PATH** dans la premiere fenetre de
-l'installateur. Pour verifier :
+Sous Windows, coche **Add Python to PATH** dans la première fenêtre de
+l'installateur. Pour vérifier :
 
 ```bash
 python --version
 ```
 
-Le resultat doit commencer par `Python 3.11`, `3.12`, `3.13` ou une version
-plus recente. Sous Windows, si `python` n'est pas reconnu, essaie `py`.
+Le résultat doit commencer par `Python 3.11`, `3.12`, `3.13` ou une version
+plus récente. Sous Windows, si `python` n'est pas reconnu, essaie `py`.
 
-### 3. Lancer l'installation guidee
+### 3. Lancer l'installation guidée
 
 Ouvre un terminal dans le dossier `signal-matin` :
 
-- **Windows 11** : clique dans la barre d'adresse de l'Explorateur, ecris
-  `powershell`, puis appuie sur Entree ;
-- **macOS / Linux** : ouvre Terminal, ecris `cd ` avec un espace, glisse le
-  dossier dans la fenetre, puis appuie sur Entree.
+- **Windows 11** : clique dans la barre d'adresse de l'Explorateur, écris
+  `powershell`, puis appuie sur Entrée ;
+- **macOS / Linux** : ouvre Terminal, écris `cd ` avec un espace, glisse le
+  dossier dans la fenêtre, puis appuie sur Entrée.
 
 Lance ensuite :
 
@@ -72,7 +72,7 @@ Lance ensuite :
 python scripts/setup.py
 ```
 
-Sous Windows, tu peux utiliser ceci si necessaire :
+Sous Windows, tu peux utiliser ceci si nécessaire :
 
 ```powershell
 py scripts/setup.py
@@ -80,16 +80,16 @@ py scripts/setup.py
 
 Le programme :
 
-1. cree un environnement Python isole dans `.venv` ;
-2. installe les dependances ;
+1. crée un environnement Python isolé dans `.venv` ;
+2. installe les dépendances ;
 3. installe Chromium pour fabriquer les PDF ;
-4. cree un `config.yaml` local de demonstration ;
-5. verifie l'installation ;
+4. crée un `config.yaml` local de démonstration ;
+5. vérifie l'installation ;
 6. ouvre un vrai journal fictif dans le navigateur.
 
 Il ne lance jamais d'impression pendant l'installation.
 
-### 4. Verifier ou reparer
+### 4. Vérifier ou réparer
 
 ```bash
 # Windows
@@ -99,7 +99,7 @@ Il ne lance jamais d'impression pendant l'installation.
 ./.venv/bin/python scripts/doctor.py
 ```
 
-Chaque ligne indique `OK`, `INFO` ou l'action exacte a effectuer.
+Chaque ligne indique `OK`, `INFO` ou l'action exacte à effectuer.
 
 ## 🤝 Se faire aider par une IA (gratuitement)
 
@@ -107,28 +107,28 @@ Chaque ligne indique `OK`, `INFO` ou l'action exacte a effectuer.
 version gratuite de [ChatGPT](https://chatgpt.com/),
 [Claude](https://claude.ai/) ou [Gemini](https://gemini.google.com/), colle le
 contenu de [INSTALL_WITH_AI.md](INSTALL_WITH_AI.md), puis laisse l'assistant te
-guider une etape a la fois. Les offres gratuites ont des limites variables,
-mais l'installation de demonstration est suffisamment courte pour ce type
+guider une étape à la fois. Les offres gratuites ont des limites variables,
+mais l'installation de démonstration est suffisamment courte pour ce type
 d'accompagnement.
 
 **Pour MODIFIER ou bidouiller le code**, plusieurs choix existent :
 
 - **[Cline](https://docs.cline.bot/) + [Ollama](https://ollama.com/)** —
-  assistant de code avec un modele local, sans facturation d'API cloud ; il faut
-  toutefois un ordinateur assez puissant pour le modele choisi ;
+  assistant de code avec un modèle local, sans facturation d'API cloud ; il faut
+  toutefois un ordinateur assez puissant pour le modèle choisi ;
 - **[GitHub Copilot Free](https://docs.github.com/en/copilot/get-started/plans)**
-  — palier gratuit et limite, disponible notamment dans VS Code ;
+  — palier gratuit et limité, disponible notamment dans VS Code ;
 - **[Cursor Hobby](https://www.cursor.com/pricing)** — offre gratuite avec un
-  volume d'utilisation limite ;
-- **Codex ou Claude Code** — si tu y as deja acces avec ton abonnement ou ton
+  volume d'utilisation limité ;
+- **Codex ou Claude Code** — si tu y as déjà accès avec ton abonnement ou ton
   organisation.
 
-Aucun outil n'est impose : prends celui qui te convient. Ne colle jamais dans
+Aucun outil n'est imposé : prends celui qui te convient. Ne colle jamais dans
 un chatbot le contenu de `.env`, `config.yaml`, `credentials.json`, `token.json`
-ou une URL de calendrier privee. Le guide explique ou placer ces informations
+ou une URL de calendrier privée. Le guide explique où placer ces informations
 localement sans les exposer dans la conversation.
 
-## Installation manuelle — pour les personnes a l'aise avec un terminal
+## Installation manuelle — pour les personnes à l'aise avec un terminal
 
 ```bash
 git clone https://github.com/sosoj92/signal-matin.git
@@ -144,7 +144,7 @@ pip install -e .
 playwright install chromium
 ```
 
-Enfin, copie la configuration d'exemple et ouvre la demo :
+Enfin, copie la configuration d'exemple et ouvre la démo :
 
 ```powershell
 # Windows PowerShell
@@ -160,7 +160,7 @@ python main.py --preview --demo
 
 ## Utilisation quotidienne
 
-Les commandes ci-dessous supposent que l'environnement est active. Pour
+Les commandes ci-dessous supposent que l'environnement est activé. Pour
 l'activer :
 
 ```bash
@@ -174,12 +174,12 @@ source .venv/bin/activate
 Puis :
 
 ```bash
-python main.py --preview   # ouvre l'apercu HTML
-python main.py --generate  # cree JSON + HTML + PDF
-python main.py --print     # prepare l'impression, sans l'envoyer
+python main.py --preview   # ouvre l'aperçu HTML
+python main.py --generate  # crée JSON + HTML + PDF
+python main.py --print     # prépare l'impression, sans l'envoyer
 ```
 
-La CLI installee propose les memes operations :
+La CLI installée propose les mêmes opérations :
 
 ```bash
 signal-matin preview --demo
@@ -189,7 +189,7 @@ signal-matin print --live --printer "Nom exact" --duplex --confirm
 
 `print` n'envoie rien sans `--confirm`.
 
-Les fichiers sont ranges par date :
+Les fichiers sont rangés par date :
 
 ```text
 output/data/2026-09-26-signal-matin.json
@@ -199,26 +199,26 @@ output/pdf/2026-09-26-signal-matin.pdf
 
 ## ⚙️ Configuration
 
-Toute la configuration tient dans un seul fichier local `config.yaml`, cree a
+Toute la configuration tient dans un seul fichier local `config.yaml`, créée à
 partir de [config.example.yaml](config.example.yaml). Ce fichier n'est jamais
-versionne : chacun peut donc brancher ses propres sources sans les publier sur
+versionné : chacun peut donc brancher ses propres sources sans les publier sur
 GitHub.
 
-| Integration | Ce qu'il faut | Guide |
+| Intégration | Ce qu'il faut | Guide |
 |---|---|---|
-| Edition de demonstration | Rien | [Installation ultra simple](#installation-ultra-simple--debutants) |
-| Meteo Open-Meteo | Ville et coordonnees, aucune cle | [Meteo](#meteo-sans-cle-api) |
-| Actualites et veille RSS | URLs de flux publics | [RSS et actualites](#flux-rss-et-actualites) |
-| Agenda ICS | Fichier local ou URL privee | [Agenda ICS](#agenda-ics) |
+| Édition de démonstration | Rien | [Installation ultra simple](#installation-ultra-simple--débutants) |
+| Météo Open-Meteo | Ville et coordonnées, aucune clé | [Météo](#météo-sans-clé-api) |
+| Actualités et veille RSS | URLs de flux publics | [RSS et actualités](#flux-rss-et-actualités) |
+| Agenda ICS | Fichier local ou URL privée | [Agenda ICS](#agenda-ics) |
 | Google Calendar | Client OAuth local en lecture seule | [Google Calendar](#google-calendar) |
-| Priorites et rappels | Quelques lignes YAML locales | [Priorites](#priorites-et-rappels) |
-| Impression | Une imprimante configuree, facultative | [Impression](#impression) |
+| Priorités et rappels | Quelques lignes YAML locales | [Priorités](#priorités-et-rappels) |
+| Impression | Une imprimante configurée, facultative | [Impression](#impression) |
 | Lancement quotidien | Planificateur Windows ou cron | [Automatisation](#automatiser-chaque-matin) |
 
-### Activer ses vraies donnees
+### Activer ses vraies données
 
-Ouvre `config.yaml` dans un editeur de texte, remplace `demo: true` par
-`demo: false`, puis active uniquement les modules souhaites :
+Ouvre `config.yaml` dans un éditeur de texte, remplace `demo: true` par
+`demo: false`, puis active uniquement les modules souhaités :
 
 ```yaml
 modules:
@@ -234,9 +234,9 @@ modules:
 ```
 
 Tout est facultatif. Une source absente ou en panne ne bloque pas le reste du
-journal. Signal Matin n'invente pas une actualite pour remplir un trou.
+journal. Signal Matin n'invente pas une actualité pour remplir un trou.
 
-### Meteo sans cle API
+### Météo sans clé API
 
 Open-Meteo fonctionne gratuitement et sans compte :
 
@@ -247,14 +247,14 @@ weather:
   longitude: 4.8357
 ```
 
-### Flux RSS et actualites
+### Flux RSS et actualités
 
 ```yaml
 news:
   limit: 12
   max_age_hours: 72
   feeds:
-    - name: "Nom du media"
+    - name: "Nom du média"
       category: "Monde"
       url: "https://media.example/rss.xml"
 
@@ -266,8 +266,8 @@ tech:
       url: "https://tech.example/rss.xml"
 ```
 
-Les titres, resumes, dates, URLs et medias restent associes a chaque article,
-mais le journal imprime ne montre pas les details techniques du connecteur.
+Les titres, résumés, dates, URLs et médias restent associés à chaque article,
+mais le journal imprimé ne montre pas les détails techniques du connecteur.
 
 ### Agenda ICS
 
@@ -280,7 +280,7 @@ calendar:
       source: "calendars/agenda.ics"
 ```
 
-Une URL ICS peut donner acces a ton agenda : ne la publie jamais.
+Une URL ICS peut donner accès à ton agenda : ne la publie jamais.
 
 ### Google Calendar
 
@@ -290,8 +290,8 @@ Installe d'abord l'option Google :
 pip install -e ".[google]"
 ```
 
-Dans Google Cloud Console, cree un client OAuth de type **application de
-bureau**, telecharge-le sous `credentials.json`, puis configure :
+Dans Google Cloud Console, crée un client OAuth de type **application de
+bureau**, télécharge-le sous `credentials.json`, puis configure :
 
 ```yaml
 calendar:
@@ -308,9 +308,9 @@ Connecte ensuite le compte une seule fois :
 signal-matin auth-google
 ```
 
-L'acces est en lecture seule. Les fichiers OAuth sont ignores par Git.
+L'accès est en lecture seule. Les fichiers OAuth sont ignorés par Git.
 
-### Priorites et rappels
+### Priorités et rappels
 
 ```yaml
 tasks:
@@ -325,7 +325,7 @@ tasks:
 ```
 
 Le fichier [config.example.yaml](config.example.yaml) documente toutes les
-options avec des exemples generiques.
+options avec des exemples génériques.
 
 ## ✏️ Personnaliser facilement
 
@@ -337,12 +337,12 @@ change seulement les valeurs dont tu as besoin.
 |---|---|
 | Renommer le journal | `paper.title`, `paper.subtitle` et `paper.motto` |
 | Afficher ou masquer une rubrique | les interrupteurs `true` / `false` de `modules` |
-| Changer la ville de la meteo | `weather.location`, `latitude` et `longitude` |
-| Ajouter mes priorites | `tasks.priorities` et `tasks.reminders` |
+| Changer la ville de la météo | `weather.location`, `latitude` et `longitude` |
+| Ajouter mes priorités | `tasks.priorities` et `tasks.reminders` |
 | Ajouter une phrase personnelle | `personal.greeting`, `note`, `free_window` ou `quote` |
-| Choisir mes medias | `news.feeds` et `tech.feeds` |
+| Choisir mes médias | `news.feeds` et `tech.feeds` |
 | Ajouter mes recommandations | `recommendations` |
-| Faire une edition plus courte ou plus riche | l'option `--mode` de la commande |
+| Faire une édition plus courte ou plus riche | l'option `--mode` de la commande |
 
 ### Changer le nom et la devise
 
@@ -350,15 +350,15 @@ change seulement les valeurs dont tu as besoin.
 paper:
   title: "Le Petit Matin"
   subtitle: "Mon quotidien personnel"
-  motto: "Commencer informe, continuer leger."
+  motto: "Commencer informé, continuer léger."
 ```
 
 Le titre peut contenir un ou plusieurs mots. Le moteur adapte automatiquement
-le masthead, les en-tetes et les pieds de page.
+le masthead, les en-têtes et les pieds de page.
 
 ### Choisir ses rubriques
 
-Passe une option a `false` pour retirer completement la rubrique correspondante :
+Passe une option à `false` pour retirer complètement la rubrique correspondante :
 
 ```yaml
 modules:
@@ -373,46 +373,46 @@ modules:
   recommendations: false
 ```
 
-Toutes les sources restent facultatives. Une rubrique vide ou desactivee ne
-laisse pas un grand encadre blanc : la composition se reequilibre et la
+Toutes les sources restent facultatives. Une rubrique vide ou désactivée ne
+laisse pas un grand encadré blanc : la composition se rééquilibre et la
 pagination s'adapte au contenu restant.
 
 ### Ajouter sa touche personnelle
 
 ```yaml
 personal:
-  greeting: "Bonjour, voici l'essentiel pour commencer la journee."
+  greeting: "Bonjour, voici l'essentiel pour commencer la journée."
   note: "Garder une heure sans notifications ce matin."
   free_window: "14 h - 15 h 30"
   quote:
-    text: "La clarte precede l'action."
+    text: "La clarté précède l'action."
     author: "Note personnelle"
 
 recommendations:
-  - title: "Relire le chapitre commence hier"
+  - title: "Relire le chapitre commencé hier"
     kind: "Lecture"
     reason: "Dix minutes suffisent pour reprendre le fil."
 ```
 
 Ces textes restent dans le `config.yaml` local et ne sont jamais inclus dans le
-depot Git.
+dépôt Git.
 
-### Choisir le format de l'edition
+### Choisir le format de l'édition
 
 ```bash
 signal-matin preview --mode compact   # bref et rapide
-signal-matin preview --mode standard  # equilibre
-signal-matin preview --mode extended  # davantage de developpements
+signal-matin preview --mode standard  # équilibre
+signal-matin preview --mode extended  # davantage de développements
 signal-matin preview --mode auto      # Signal Matin choisit selon le contenu
 ```
 
 Utilise toujours `preview` avant d'imprimer : tu peux modifier `config.yaml`,
-relancer la commande et comparer immediatement le resultat.
+relancer la commande et comparer immédiatement le résultat.
 
 ### Modifier les couleurs et les polices
 
-Pour une personnalisation visuelle simple, les reglages principaux sont reunis
-au debut de [`web/signal_matin.css`](web/signal_matin.css) :
+Pour une personnalisation visuelle simple, les réglages principaux sont réunis
+au début de [`web/signal_matin.css`](web/signal_matin.css) :
 
 ```css
 :root {
@@ -427,19 +427,19 @@ au debut de [`web/signal_matin.css`](web/signal_matin.css) :
 Garde un contraste fort pour l'impression et ne change pas les dimensions A4
 si tu souhaites conserver la pagination automatique.
 
-### Demander a une IA de le personnaliser
+### Demander à une IA de le personnaliser
 
-Tu peux aussi donner ce prompt a l'assistant de ton choix :
+Tu peux aussi donner ce prompt à l'assistant de ton choix :
 
 ```text
-Lis le README et config.example.yaml du projet Signal Matin. Aide-moi a
-personnaliser uniquement mon fichier local config.yaml, une etape a la fois.
-Commence par me demander le nom du journal, les rubriques souhaitees et mes
-sources. Ne me demande jamais de coller une cle API, un token OAuth, une URL ICS
-privee ou le contenu complet de config.yaml dans la conversation.
+Lis le README et config.example.yaml du projet Signal Matin. Aide-moi à
+personnaliser uniquement mon fichier local config.yaml, une étape à la fois.
+Commence par me demander le nom du journal, les rubriques souhaitées et mes
+sources. Ne me demande jamais de coller une clé API, un token OAuth, une URL ICS
+privée ou le contenu complet de config.yaml dans la conversation.
 ```
 
-## Choisir le nombre et la densite des pages
+## Choisir le nombre et la densité des pages
 
 ```bash
 signal-matin generate --demo --mode compact
@@ -450,13 +450,13 @@ signal-matin generate --demo --mode extended
 | Mode | Pour quoi faire |
 |---|---|
 | `compact` | Brief rapide, peu de contenu, environ quatre pages. |
-| `standard` | Edition quotidienne equilibree. |
-| `extended` | Plus de developpements et de cahiers. |
-| `auto` | Choix d'apres la quantite de contenu. |
+| `standard` | Édition quotidienne équilibrée. |
+| `extended` | Plus de développements et de cahiers. |
+| `auto` | Choix d'après la quantité de contenu. |
 
 Le nombre final n'est pas rigide. Le moteur mesure les vraies pages dans
-Chromium. Si un article, une liste ou une rubrique deborde, il cree une page de
-suite, renumerote le journal et conserve un A4 lisible.
+Chromium. Si un article, une liste ou une rubrique déborde, il crée une page de
+suite, renumérote le journal et conserve un A4 lisible.
 
 ## Impression
 
@@ -472,15 +472,15 @@ Puis confirme explicitement :
 signal-matin print --live --printer "Nom exact" --duplex --confirm
 ```
 
-- Windows utilise le pilote selectionne et un rendu plein A4 ;
+- Windows utilise le pilote sélectionné et un rendu plein A4 ;
 - macOS et Linux utilisent CUPS (`lp`) ;
-- aucune impression n'est lancee pendant l'installation ou les tests.
+- aucune impression n'est lancée pendant l'installation ou les tests.
 
 ## Automatiser chaque matin
 
-### Windows — Planificateur de taches
+### Windows — Planificateur de tâches
 
-Generation seule a 8 h :
+Génération seule à 8 h :
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\install_windows_task.ps1 -Time "08:00"
@@ -493,8 +493,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\install_windows_task.ps1 `
   -Time "08:00" -Print -Duplex -Printer "Nom exact de l'imprimante"
 ```
 
-Le script memorise le Python de `.venv`, le dossier du projet et l'imprimante.
-L'heure choisie est l'heure de **demarrage de la collecte** : avec beaucoup de
+Le script mémorise le Python de `.venv`, le dossier du projet et l'imprimante.
+L'heure choisie est l'heure de **démarrage de la collecte** : avec beaucoup de
 sources, le papier peut sortir quelques minutes plus tard.
 
 Pour faire un essai dans une minute sans laisser Codex ou un terminal ouvert :
@@ -503,18 +503,18 @@ Pour faire un essai dans une minute sans laisser Codex ou un terminal ouvert :
 powershell -ExecutionPolicy Bypass -File .\scripts\programmer_impression_signal_matin.ps1 -DansMinutes 1
 ```
 
-Ou pour la prochaine occurrence d'une heure precise :
+Ou pour la prochaine occurrence d'une heure précise :
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\programmer_impression_signal_matin.ps1 -Heure "18:30"
 ```
 
-Le test reutilise exactement l'action de la tache quotidienne `Signal Matin`.
-Il refuse de continuer si cette tache a ete installee sans l'option `-Print`.
+Le test réutilise exactement l'action de la tâche quotidienne `Signal Matin`.
+Il refuse de continuer si cette tâche a été installée sans l'option `-Print`.
 
 ### macOS / Linux — cron
 
-Le script affiche la ligne a ajouter, sans modifier la crontab tout seul :
+Le script affiche la ligne à ajouter, sans modifier la crontab tout seul :
 
 ```bash
 sh scripts/install_cron.sh 08:00 generate
@@ -537,7 +537,7 @@ Sources facultatives
           MorningEdition JSON
                     |
                     v
-          Regles editoriales
+          Règles éditoriales
                     |
                     v
        Renderer HTML/CSS autonome
@@ -549,32 +549,32 @@ Sources facultatives
           Impression facultative
 ```
 
-Les donnees et le design restent separes :
+Les données et le design restent séparés :
 
 - `src/signal_matin/connectors/` lit les sources ;
-- `models.py` definit le contrat JSON ;
-- `pipeline.py` orchestre et hierarchise ;
-- `renderer.py` ne connait aucune cle ni API ;
+- `models.py` définit le contrat JSON ;
+- `pipeline.py` orchestre et hiérarchise ;
+- `renderer.py` ne connaît aucune clé ni API ;
 - `web/signal_matin.css` porte la direction artistique ;
-- `signal_matin_pagination.js` cree les pages de suite si necessaire ;
+- `signal_matin_pagination.js` crée les pages de suite si nécessaire ;
 - `pdf.py` mesure chaque A4 avant l'export ;
 - `printer.py` exige une confirmation explicite.
 
 ## Ajouter un connecteur
 
 1. Ajoute un module dans `src/signal_matin/connectors/`.
-2. Retourne des modeles normalises et un `DataSourceStatus`.
+2. Retourne des modèles normalisés et un `DataSourceStatus`.
 3. Branche-le dans `pipeline.py`, jamais dans le renderer.
-4. Ajoute un exemple generique dans `config.example.yaml`.
-5. Ecris un test avec des donnees fictives, sans appel reseau reel.
+4. Ajoute un exemple générique dans `config.example.yaml`.
+5. Écris un test avec des données fictives, sans appel réseau réel.
 
-Un connecteur ne doit jamais ecrire de secret dans le JSON ou les logs. Une
-erreur ne doit degrader que sa propre section.
+Un connecteur ne doit jamais écrire de secret dans le JSON ou les logs. Une
+erreur ne doit dégrader que sa propre section.
 
 ## Personnaliser le design
 
-La feuille `web/signal_matin.css` est concue pour `@page { size: A4 }`. Conserve
-les marges physiques et lance les tests de debordement apres chaque changement :
+La feuille `web/signal_matin.css` est conçue pour `@page { size: A4 }`. Conserve
+les marges physiques et lance les tests de débordement après chaque changement :
 
 ```bash
 signal-matin preview --demo --mode standard
@@ -589,23 +589,23 @@ playwright install chromium
 pytest
 ```
 
-La CI verifie les modeles, les sections absentes, le HTML, les trois densites,
-la pagination dynamique, les debordements et le format A4. Voir aussi
+La CI vérifie les modèles, les sections absentes, le HTML, les trois densités,
+la pagination dynamique, les débordements et le format A4. Voir aussi
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Confidentialite
+## Confidentialité
 
-- `.env`, `config.yaml`, OAuth, calendriers et sorties sont ignores par Git ;
-- les URLs privees restent uniquement sur la machine de l'utilisateur ;
-- aucune donnee personnelle n'est necessaire pour le mode demo ;
+- `.env`, `config.yaml`, OAuth, calendriers et sorties sont ignorés par Git ;
+- les URLs privées restent uniquement sur la machine de l'utilisateur ;
+- aucune donnée personnelle n'est nécessaire pour le mode démo ;
 - l'impression demande toujours une action volontaire ;
-- ce depot est autonome et ne depend d'aucun assistant personnel.
+- ce dépôt est autonome et ne dépend d'aucun assistant personnel.
 
-## Depannage
+## Dépannage
 
 **`python` n'est pas reconnu sous Windows**
 
-Reinstalle Python en cochant **Add Python to PATH**, ou essaie
+Réinstalle Python en cochant **Add Python to PATH**, ou essaie
 `py scripts/setup.py`.
 
 **PowerShell refuse `Activate.ps1`**
@@ -620,17 +620,17 @@ ou `./.venv/bin/python -m playwright install chromium` sous macOS/Linux.
 
 **Une source ne s'affiche pas**
 
-Verifie qu'elle est activee dans `modules`, puis lance `python scripts/doctor.py`.
+Vérifie qu'elle est activée dans `modules`, puis lance `python scripts/doctor.py`.
 Les autres rubriques continueront de fonctionner.
 
 **L'impression quotidienne ne part pas**
 
-Ouvre le Planificateur de taches et consulte l'historique de `Signal Matin`.
-Reinstalle la tache avec `-Print`, puis fais un essai avec `-DansMinutes 1`.
+Ouvre le Planificateur de tâches et consulte l'historique de `Signal Matin`.
+Réinstalle la tâche avec `-Print`, puis fais un essai avec `-DansMinutes 1`.
 
 **Une page est plus longue que d'habitude**
 
-C'est normal : le moteur ajoute une page de suite lorsque la quantite de texte
+C'est normal : le moteur ajoute une page de suite lorsque la quantité de texte
 l'exige, au lieu de tronquer l'information.
 
 ## Licence

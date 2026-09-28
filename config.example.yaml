@@ -1,10 +1,10 @@
-# Copie vers config.yaml. Le mode demo garantit un premier rendu immediat.
+# Copie vers config.yaml. Le mode démo garantit un premier rendu immédiat.
 demo: true
 
 paper:
   title: "Signal Matin"
   subtitle: "Le journal anti-scroll"
-  motto: "Voir clair avant de voir l'ecran."
+  motto: "Voir clair avant de voir l'écran."
 
 modules:
   weather: true
@@ -25,7 +25,7 @@ weather:
 calendar:
   ics: []
   # - name: "Agenda personnel"
-  #   source: "calendars/agenda.ics" # chemin local ou URL privee placee seulement ici
+  #   source: "calendars/agenda.ics" # chemin local ou URL privée placée seulement ici
   google:
     enabled: false
     calendar_id: "primary"
@@ -42,7 +42,7 @@ news:
   limit: 12
   max_age_hours: 72
   feeds: []
-  # - name: "Nom du media"
+  # - name: "Nom du média"
   #   category: "Monde"
   #   url: "https://exemple.org/rss.xml"
 

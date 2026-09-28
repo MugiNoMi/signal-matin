@@ -1,4 +1,4 @@
-# Contribuer a Signal Matin
+# Contribuer à Signal Matin
 
 Merci de contribuer. Le projet privilégie les changements petits, testables et
 compatibles avec une installation sans compte externe.
