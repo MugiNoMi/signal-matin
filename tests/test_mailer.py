@@ -86,3 +86,22 @@ def test_generate_email_sends_alert_then_reraises(monkeypatch, tmp_path):
     with pytest.raises(RuntimeError, match="panne"):
         cli.main(["generate", "--demo", "--email", "--config", str(config_path)])
     assert [m["Subject"] for m in sent] == ["Signal Matin — échec de l'édition"]
+
+
+def test_subjects_use_configured_paper_title(tmp_path):
+    pdf = tmp_path / "edition.pdf"
+    pdf.write_bytes(b"%PDF")
+    settings = load_email_settings({**CONFIG, "paper": {"title": "Mike Morning"}})
+    printer, _ = build_edition_messages(settings, pdf, dt.date(2026, 9, 29))
+    assert printer["Subject"] == "Mike Morning — 29/09/2026"
+
+
+def test_demo_edition_uses_configured_paper_title(tmp_path):
+    from signal_matin import cli
+
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text("paper:\n  title: Mike Morning\n", encoding="utf-8")
+    args = cli.build_parser().parse_args(
+        ["data", "--demo", "--date", "2026-09-29", "--config", str(config_path)])
+    edition = cli._edition(args, cli.load_config(args.config))
+    assert edition.edition.title == "Mike Morning"

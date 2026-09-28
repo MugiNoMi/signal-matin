@@ -28,6 +28,7 @@ class EmailSettings:
     printer_to: list[str] = field(default_factory=list)
     copy_to: list[str] = field(default_factory=list)
     alert_to: list[str] = field(default_factory=list)
+    title: str = "Signal Matin"
 
     @property
     def use_ssl(self) -> bool:
@@ -53,6 +54,7 @@ def load_email_settings(config: dict) -> EmailSettings:
         printer_to=_addresses(section.get("printer_to")),
         copy_to=_addresses(section.get("copy_to")),
         alert_to=_addresses(section.get("alert_to")) or _addresses(section.get("copy_to")),
+        title=str(setting(config, "paper.title", "") or "Signal Matin"),
     )
     missing = [name for name, value in (
         ("email.username", settings.username),
@@ -87,14 +89,14 @@ def _message(settings: EmailSettings, to: list[str], subject: str, body: str,
 
 def build_edition_messages(settings: EmailSettings, pdf_path: Path,
                            date: dt.date) -> list[EmailMessage]:
-    subject = f"Signal Matin — {date.strftime('%d/%m/%Y')}"
+    subject = f"{settings.title} — {date.strftime('%d/%m/%Y')}"
     messages = []
     if settings.printer_to:
         # Les services d'impression par email impriment aussi le corps du
         # message : il reste vide pour n'obtenir que le journal.
         messages.append(_message(settings, settings.printer_to, subject, "", pdf_path))
     if settings.copy_to:
-        body = "Bonjour,\n\nL'édition du jour est en pièce jointe.\n\nSignal Matin"
+        body = "Bonjour,\n\nL'édition du jour est en pièce jointe.\n\n" + settings.title
         messages.append(_message(settings, settings.copy_to, subject, body, pdf_path))
     return messages
 
@@ -102,11 +104,11 @@ def build_edition_messages(settings: EmailSettings, pdf_path: Path,
 def build_alert_message(settings: EmailSettings, date: dt.date,
                         error: BaseException) -> EmailMessage:
     body = (
-        f"La génération de Signal Matin du {date.isoformat()} a échoué.\n\n"
+        f"La génération de {settings.title} du {date.isoformat()} a échoué.\n\n"
         f"{type(error).__name__}: {error}\n\n"
         "Détails : journalctl -u signal-matin.service"
     )
-    return _message(settings, settings.alert_to, "Signal Matin — échec de l'édition", body)
+    return _message(settings, settings.alert_to, f"{settings.title} — échec de l'édition", body)
 
 
 def send(settings: EmailSettings, messages: list[EmailMessage]) -> None:

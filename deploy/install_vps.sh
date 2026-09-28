@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 # Déploie Signal Matin sur un VPS Docker + systemd.
 # Usage (depuis le Mac, à la racine du projet) :
-#   deploy/install_vps.sh root@109.176.197.104 ~/.ssh/id_ed25519_hostinger
+#   deploy/install_vps.sh root@109.176.197.104 ~/.ssh/id_ed25519_hostinger [--no-test]
+# --no-test : met à jour sans lancer d'édition (donc sans impression).
 set -euo pipefail
-HOST="$1"; KEY="${2:-$HOME/.ssh/id_ed25519}"
+HOST="$1"; KEY="${2:-$HOME/.ssh/id_ed25519}"; TEST_RUN=1
+[ "${3:-}" = "--no-test" ] && TEST_RUN=0
 SSH=(ssh -i "$KEY" "$HOST")
 
 "${SSH[@]}" 'mkdir -p /opt/signal-matin/app /opt/signal-matin/output'
 rsync -az --delete --exclude-from=.dockerignore -e "ssh -i $KEY" ./ "$HOST":/opt/signal-matin/app/
 
-"${SSH[@]}" bash -s <<'REMOTE'
+"${SSH[@]}" TEST_RUN=$TEST_RUN bash -s <<'REMOTE'
 set -euo pipefail
 cd /opt/signal-matin
 # Config de démo au premier déploiement seulement ; jamais écrasée ensuite.
@@ -20,7 +22,9 @@ install -m 644 app/deploy/systemd/signal-matin.service /etc/systemd/system/
 install -m 644 app/deploy/systemd/signal-matin.timer /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable --now signal-matin.timer
-systemctl start signal-matin.service   # génération de test immédiate
-ls -la output/pdf
+if [ "$TEST_RUN" = 1 ]; then
+  systemctl start signal-matin.service   # génération de test immédiate
+  ls -la output/pdf
+fi
 systemctl list-timers signal-matin.timer --no-pager
 REMOTE
