@@ -1,0 +1,13 @@
+.git
+.venv
+venv
+output
+tmp
+config.yaml
+.env
+credentials*.json
+token*.json
+client_secret*.json
+*.ics
+__pycache__
+.pytest_cache

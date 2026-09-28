@@ -1,0 +1,10 @@
+[Unit]
+Description=Signal Matin - chaque matin à 6h50 (heure de Paris)
+
+[Timer]
+OnCalendar=*-*-* 06:50:00 Europe/Paris
+Persistent=true
+RandomizedDelaySec=60
+
+[Install]
+WantedBy=timers.target

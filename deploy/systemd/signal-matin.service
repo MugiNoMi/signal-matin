@@ -1,0 +1,14 @@
+[Unit]
+Description=Signal Matin - génération de l'édition du jour
+Wants=network-online.target
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/signal-matin
+ExecStart=/usr/bin/docker run --rm --name signal-matin \
+  -v /opt/signal-matin/config.yaml:/app/config.yaml:ro \
+  -v /opt/signal-matin/.env:/app/.env:ro \
+  -v /opt/signal-matin/output:/app/output \
+  signal-matin:latest generate
