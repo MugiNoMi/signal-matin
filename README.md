@@ -214,8 +214,10 @@ signal-matin ereader --demo --format both   # génère les deux pour comparer
 ```
 
 Le guide [Lire Signal Matin sur une liseuse](docs/liseuse.md) explique les
-profils d'écran et le transfert manuel. Aucun fichier n'est envoyé vers un
-appareil ou un service externe sans action explicite.
+profils d'écran et trois modes de livraison : USB, **Send-to-PocketBook** lorsque
+le firmware l'intègre, ou une **page privée sur le Wi-Fi local** lorsqu'il ne
+l'intègre pas. Cette page peut renouveler l'EPUB chaque matin sur un ordinateur
+allumé en permanence, sans exposer la configuration ni les clés API.
 
 ## ⚙️ Configuration
 
