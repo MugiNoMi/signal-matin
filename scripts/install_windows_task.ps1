@@ -7,7 +7,12 @@ param(
 
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
-$Python = (Get-Command python -ErrorAction Stop).Source
+$VenvPython = Join-Path $Root ".venv\Scripts\python.exe"
+if (Test-Path $VenvPython) {
+    $Python = $VenvPython
+} else {
+    $Python = (Get-Command python -ErrorAction Stop).Source
+}
 $Main = Join-Path $Root "main.py"
 $Arguments = @("`"$Main`"")
 
@@ -25,7 +30,7 @@ $Settings = New-ScheduledTaskSettingsSet -WakeToRun -StartWhenAvailable
 Register-ScheduledTask -TaskName "Signal Matin" -Action $Action -Trigger $Trigger `
     -Settings $Settings -Description "Genere le journal personnel Signal Matin" -Force | Out-Null
 
-Write-Host "Tache 'Signal Matin' installee pour $Time."
+Write-Host "Tache 'Signal Matin' installee pour $Time avec $Python."
 if (-not $Print) {
     Write-Host "Generation seulement. L'impression automatique n'est pas activee."
 }
