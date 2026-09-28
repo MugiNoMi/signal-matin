@@ -23,6 +23,7 @@ vrai journal monochrome et peut produire un PDF ou l'envoyer à l'imprimante.
 - pagination adaptative : si une rubrique est plus longue, une vraie page de
   suite est créée au lieu de couper le texte ou de tout rapetisser ;
 - aperçu navigateur, PDF A4, impression facultative et recto verso ;
+- édition liseuse EPUB reformatable et PDF e-ink à fort contraste ;
 - lancement quotidien sous Windows, macOS ou Linux.
 
 ## Installation ultra simple — débutants
@@ -184,6 +185,7 @@ La CLI installée propose les mêmes opérations :
 ```bash
 signal-matin preview --demo
 signal-matin generate --demo --mode standard
+signal-matin ereader --demo --format both
 signal-matin print --live --printer "Nom exact" --duplex --confirm
 ```
 
@@ -195,7 +197,25 @@ Les fichiers sont rangés par date :
 output/data/2026-09-26-signal-matin.json
 output/preview/2026-09-26-signal-matin.html
 output/pdf/2026-09-26-signal-matin.pdf
+output/ereader/2026-09-26-signal-matin.epub
+output/ereader/2026-09-26-signal-matin-eink.pdf
 ```
+
+## Lire sur une liseuse sans imprimer
+
+Le format recommandé est l'**EPUB** : le texte se réorganise selon l'écran et
+la taille de police choisie sur la liseuse. Un **PDF e-ink** en ratio 3:4 est
+également disponible pour les appareils qui préfèrent une mise en page fixe.
+
+```bash
+signal-matin ereader --demo                 # EPUB reformatable
+signal-matin ereader --demo --format pdf    # PDF e-ink
+signal-matin ereader --demo --format both   # génère les deux pour comparer
+```
+
+Le guide [Lire Signal Matin sur une liseuse](docs/liseuse.md) explique les
+profils d'écran et le transfert manuel. Aucun fichier n'est envoyé vers un
+appareil ou un service externe sans action explicite.
 
 ## ⚙️ Configuration
 
