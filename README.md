@@ -327,6 +327,118 @@ tasks:
 Le fichier [config.example.yaml](config.example.yaml) documente toutes les
 options avec des exemples generiques.
 
+## ✏️ Personnaliser facilement
+
+La plupart des personnalisations se font dans `config.yaml`, sans modifier le
+code. Commence par dupliquer [config.example.yaml](config.example.yaml), puis
+change seulement les valeurs dont tu as besoin.
+
+| Je veux... | Je modifie... |
+|---|---|
+| Renommer le journal | `paper.title`, `paper.subtitle` et `paper.motto` |
+| Afficher ou masquer une rubrique | les interrupteurs `true` / `false` de `modules` |
+| Changer la ville de la meteo | `weather.location`, `latitude` et `longitude` |
+| Ajouter mes priorites | `tasks.priorities` et `tasks.reminders` |
+| Ajouter une phrase personnelle | `personal.greeting`, `note`, `free_window` ou `quote` |
+| Choisir mes medias | `news.feeds` et `tech.feeds` |
+| Ajouter mes recommandations | `recommendations` |
+| Faire une edition plus courte ou plus riche | l'option `--mode` de la commande |
+
+### Changer le nom et la devise
+
+```yaml
+paper:
+  title: "Le Petit Matin"
+  subtitle: "Mon quotidien personnel"
+  motto: "Commencer informe, continuer leger."
+```
+
+Le titre peut contenir un ou plusieurs mots. Le moteur adapte automatiquement
+le masthead, les en-tetes et les pieds de page.
+
+### Choisir ses rubriques
+
+Passe une option a `false` pour retirer completement la rubrique correspondante :
+
+```yaml
+modules:
+  weather: true
+  calendar: true
+  tasks: true
+  news: true
+  tech: true
+  rss: false
+  games: true
+  tech_vocabulary: true
+  recommendations: false
+```
+
+Toutes les sources restent facultatives. Une rubrique vide ou desactivee ne
+laisse pas un grand encadre blanc : la composition se reequilibre et la
+pagination s'adapte au contenu restant.
+
+### Ajouter sa touche personnelle
+
+```yaml
+personal:
+  greeting: "Bonjour, voici l'essentiel pour commencer la journee."
+  note: "Garder une heure sans notifications ce matin."
+  free_window: "14 h - 15 h 30"
+  quote:
+    text: "La clarte precede l'action."
+    author: "Note personnelle"
+
+recommendations:
+  - title: "Relire le chapitre commence hier"
+    kind: "Lecture"
+    reason: "Dix minutes suffisent pour reprendre le fil."
+```
+
+Ces textes restent dans le `config.yaml` local et ne sont jamais inclus dans le
+depot Git.
+
+### Choisir le format de l'edition
+
+```bash
+signal-matin preview --mode compact   # bref et rapide
+signal-matin preview --mode standard  # equilibre
+signal-matin preview --mode extended  # davantage de developpements
+signal-matin preview --mode auto      # Signal Matin choisit selon le contenu
+```
+
+Utilise toujours `preview` avant d'imprimer : tu peux modifier `config.yaml`,
+relancer la commande et comparer immediatement le resultat.
+
+### Modifier les couleurs et les polices
+
+Pour une personnalisation visuelle simple, les reglages principaux sont reunis
+au debut de [`web/signal_matin.css`](web/signal_matin.css) :
+
+```css
+:root {
+  --ink: #151515;
+  --paper: #fbfaf6;
+  --display: Georgia, Cambria, "Times New Roman", serif;
+  --serif: Cambria, Georgia, "Times New Roman", serif;
+  --sans: Arial, "Helvetica Neue", sans-serif;
+}
+```
+
+Garde un contraste fort pour l'impression et ne change pas les dimensions A4
+si tu souhaites conserver la pagination automatique.
+
+### Demander a une IA de le personnaliser
+
+Tu peux aussi donner ce prompt a l'assistant de ton choix :
+
+```text
+Lis le README et config.example.yaml du projet Signal Matin. Aide-moi a
+personnaliser uniquement mon fichier local config.yaml, une etape a la fois.
+Commence par me demander le nom du journal, les rubriques souhaitees et mes
+sources. Ne me demande jamais de coller une cle API, un token OAuth, une URL ICS
+privee ou le contenu complet de config.yaml dans la conversation.
+```
+
 ## Choisir le nombre et la densite des pages
 
 ```bash
