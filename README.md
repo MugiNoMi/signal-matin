@@ -101,13 +101,34 @@ Il ne lance jamais d'impression pendant l'installation.
 
 Chaque ligne indique `OK`, `INFO` ou l'action exacte a effectuer.
 
-### Se faire guider par une IA
+## 🤝 Se faire aider par une IA (gratuitement)
 
-Le fichier [INSTALL_WITH_AI.md](INSTALL_WITH_AI.md) contient un prompt pret a
-copier dans une IA. Il lui demande de t'accompagner une etape a la fois, sans
-jamais lui envoyer tes cles, tokens ou calendriers prives.
+**Pour INSTALLER, aucune connaissance technique n'est requise.** Ouvre la
+version gratuite de [ChatGPT](https://chatgpt.com/),
+[Claude](https://claude.ai/) ou [Gemini](https://gemini.google.com/), colle le
+contenu de [INSTALL_WITH_AI.md](INSTALL_WITH_AI.md), puis laisse l'assistant te
+guider une etape a la fois. Les offres gratuites ont des limites variables,
+mais l'installation de demonstration est suffisamment courte pour ce type
+d'accompagnement.
 
-### Installation manuelle — pour les personnes a l'aise avec un terminal
+**Pour MODIFIER ou bidouiller le code**, plusieurs choix existent :
+
+- **[Cline](https://docs.cline.bot/) + [Ollama](https://ollama.com/)** —
+  assistant de code avec un modele local, sans facturation d'API cloud ; il faut
+  toutefois un ordinateur assez puissant pour le modele choisi ;
+- **[GitHub Copilot Free](https://docs.github.com/en/copilot/get-started/plans)**
+  — palier gratuit et limite, disponible notamment dans VS Code ;
+- **[Cursor Hobby](https://www.cursor.com/pricing)** — offre gratuite avec un
+  volume d'utilisation limite ;
+- **Codex ou Claude Code** — si tu y as deja acces avec ton abonnement ou ton
+  organisation.
+
+Aucun outil n'est impose : prends celui qui te convient. Ne colle jamais dans
+un chatbot le contenu de `.env`, `config.yaml`, `credentials.json`, `token.json`
+ou une URL de calendrier privee. Le guide explique ou placer ces informations
+localement sans les exposer dans la conversation.
+
+## Installation manuelle — pour les personnes a l'aise avec un terminal
 
 ```bash
 git clone https://github.com/sosoj92/signal-matin.git
@@ -176,7 +197,25 @@ output/preview/2026-09-26-signal-matin.html
 output/pdf/2026-09-26-signal-matin.pdf
 ```
 
-## Passer de la demo a ses vraies donnees
+## ⚙️ Configuration
+
+Toute la configuration tient dans un seul fichier local `config.yaml`, cree a
+partir de [config.example.yaml](config.example.yaml). Ce fichier n'est jamais
+versionne : chacun peut donc brancher ses propres sources sans les publier sur
+GitHub.
+
+| Integration | Ce qu'il faut | Guide |
+|---|---|---|
+| Edition de demonstration | Rien | [Installation ultra simple](#installation-ultra-simple--debutants) |
+| Meteo Open-Meteo | Ville et coordonnees, aucune cle | [Meteo](#meteo-sans-cle-api) |
+| Actualites et veille RSS | URLs de flux publics | [RSS et actualites](#flux-rss-et-actualites) |
+| Agenda ICS | Fichier local ou URL privee | [Agenda ICS](#agenda-ics) |
+| Google Calendar | Client OAuth local en lecture seule | [Google Calendar](#google-calendar) |
+| Priorites et rappels | Quelques lignes YAML locales | [Priorites](#priorites-et-rappels) |
+| Impression | Une imprimante configuree, facultative | [Impression](#impression) |
+| Lancement quotidien | Planificateur Windows ou cron | [Automatisation](#automatiser-chaque-matin) |
+
+### Activer ses vraies donnees
 
 Ouvre `config.yaml` dans un editeur de texte, remplace `demo: true` par
 `demo: false`, puis active uniquement les modules souhaites :
