@@ -6,8 +6,8 @@ import datetime as dt
 from .models import (
     AgendaItem, DataSourceStatus, DataState, DensityMode, DigestItem, EditionMeta,
     Extras, Illustration, Importance, MorningEdition, NewsBundle, NewsItem,
-    PersonalBlock, QuizBlock, QuoteBlock, Recommendation, SourceRef, TaskItem,
-    WeatherBlock, WordOfTheDay,
+    PersonalBlock, QuizBlock, QuoteBlock, Recommendation, SourceRef, SportEvent,
+    SportPage, SportRecap, SportTable, TaskItem, WeatherBlock, WordOfTheDay,
 )
 from .daily_learning import construire_apprentissage_du_jour
 
@@ -33,6 +33,40 @@ def _news(date: dt.date, title: str, category: str, summary: str,
             type="engraving", alt="Nature morte matinale dessinee au trait",
             caption="Illustration editoriale de demonstration, sans valeur documentaire.",
         ) if illustration else None),
+    )
+
+
+def _sport_demo(date: dt.date, at) -> SportPage:
+    tomorrow = date + dt.timedelta(days=1)
+    return SportPage(
+        today=[
+            SportEvent(sport="basketball", competition="NBA", highlight=True,
+                       label="DEMO - Equipe suivie – Adversaire (à domicile)",
+                       when=f"19h30 heure locale ({tomorrow:%d/%m} à 2h30 heure de Paris)",
+                       detail="Bilan 12-5"),
+            SportEvent(sport="football", competition="Ligue des champions",
+                       label="DEMO - Club A – Club B", when="21h00", detail="Stade fictif"),
+            SportEvent(sport="tennis", competition="ATP · Tournoi de démonstration",
+                       label="DEMO - Joueur A (3) – Joueur B (14)", when="13h30",
+                       detail="Quart de finale", start=at(13, 30)),
+            SportEvent(sport="tennis", competition="WTA · Tournoi de démonstration",
+                       label="DEMO - Joueuse A (2) bat Joueuse B 6-4 6-3", when="Terminé",
+                       detail="8e de finale"),
+        ],
+        recaps=[
+            SportRecap(competition="NBA", highlight=True,
+                       headline="DEMO - Equipe suivie 112 – 104 Adversaire",
+                       lines=["Victoire à domicile, bilan 12-5",
+                              "Equipe suivie : Joueur fictif (31 pts, 12 rbds, 5 ctres)",
+                              "Adversaire : Autre joueur (27 pts, 8 pd)"]),
+        ],
+        tables=[SportTable(
+            title="DEMO - Classement fictif", highlight="Equipe suivie",
+            columns=["Rg", "Équipe", "V", "D", "%"],
+            rows=[["1", "Equipe suivie", "12", "5", ".706"], ["2", "Autre equipe", "11", "6", ".647"],
+                  ["3", "Troisieme equipe", "9", "8", ".529"]],
+        )],
+        notes=["DEMO - Equipe suivie : bilan 12-5, 1er de la division"],
     )
 
 
@@ -172,5 +206,6 @@ def construire_demo(date: dt.date | None = None) -> MorningEdition:
             reflection="Quelle information peux-tu ignorer aujourd'hui sans rien perdre d'important ?",
         ),
         learning=construire_apprentissage_du_jour(date),
+        sport=_sport_demo(date, at),
     )
     return edition

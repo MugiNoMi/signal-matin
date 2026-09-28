@@ -6,14 +6,14 @@ from pathlib import Path
 
 from .config import ROOT, setting
 from .connectors import (
-    collect_google_calendar, collect_ics, collect_rss, collect_tasks,
+    collect_google_calendar, collect_ics, collect_rss, collect_sport, collect_tasks,
     collect_weather,
 )
 from .daily_learning import construire_apprentissage_du_jour
 from .models import (
     DataSourceStatus, DataState, DigestItem, EditionMeta, Extras, Importance,
     LearningPage, MorningEdition, NewsBundle, NewsItem, PersonalBlock, QuoteBlock,
-    Recommendation, SourceRef,
+    Recommendation, SourceRef, SportPage,
 )
 from .normalizer import normaliser_edition
 
@@ -113,6 +113,13 @@ def build_live(
         tech_news, tech_status = [], _disabled("Technologie & IA")
     statuses.append(tech_status)
 
+    # Opt-in : le sport n'apparaît que si la section sport est configurée.
+    if _enabled(config, "sport", False):
+        sport, sport_status = collect_sport(setting(config, "sport", {}) or {}, now)
+    else:
+        sport, sport_status = SportPage(), _disabled("Sport")
+    statuses.append(sport_status)
+
     tech_digest = [DigestItem(
         title=item.title, summary=item.summary, source=item.source,
         importance=item.importance,
@@ -148,6 +155,7 @@ def build_live(
         news=_bundle(news_items),
         tech=tech_digest, tech_news=tech_news,
         curiosity_news=curiosities,
+        sport=sport,
         recommendations=recommendations,
         personal=PersonalBlock(
             greeting=str(setting(config, "personal.greeting", "Bonjour.") or "Bonjour."),

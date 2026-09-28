@@ -184,6 +184,43 @@ class Extras(Modele):
     reflection: str = Field(default="", max_length=420)
 
 
+class SportEvent(Modele):
+    """Une rencontre du jour : à venir, en cours ou terminée."""
+    sport: Literal["tennis", "football", "basketball"]
+    competition: str = Field(min_length=1, max_length=120)
+    label: str = Field(min_length=1, max_length=240)
+    when: str = Field(default="", max_length=120)
+    detail: str = Field(default="", max_length=240)
+    start: dt.datetime | None = None
+    highlight: bool = False
+
+
+class SportRecap(Modele):
+    """Résultat de la veille avec les meilleures performances individuelles."""
+    competition: str = Field(min_length=1, max_length=120)
+    headline: str = Field(min_length=1, max_length=200)
+    lines: list[str] = Field(default_factory=list, max_length=8)
+    highlight: bool = False
+
+
+class SportTable(Modele):
+    title: str = Field(min_length=1, max_length=120)
+    columns: list[str] = Field(min_length=1, max_length=10)
+    rows: list[list[str]] = Field(default_factory=list, max_length=40)
+    highlight: str = Field(default="", max_length=80)
+    note: str = Field(default="", max_length=240)
+
+
+class SportPage(Modele):
+    today: list[SportEvent] = Field(default_factory=list, max_length=40)
+    recaps: list[SportRecap] = Field(default_factory=list, max_length=16)
+    tables: list[SportTable] = Field(default_factory=list, max_length=4)
+    notes: list[str] = Field(default_factory=list, max_length=6)
+
+    def is_empty(self) -> bool:
+        return not (self.today or self.recaps or self.tables or self.notes)
+
+
 class PersonalBlock(Modele):
     greeting: str = Field(default="Bonjour.", max_length=160)
     note: str = Field(default="", max_length=600)
@@ -212,6 +249,7 @@ class MorningEdition(Modele):
     personal: PersonalBlock = Field(default_factory=PersonalBlock)
     extras: Extras = Field(default_factory=Extras)
     learning: LearningPage = Field(default_factory=LearningPage)
+    sport: SportPage = Field(default_factory=SportPage)
 
     @field_validator("generated_at")
     @classmethod
@@ -233,4 +271,5 @@ class MorningEdition(Modele):
             + len(self.newsletter_digest) + len(self.social_digest) * 2
             + len(self.community_digest) * 2
             + len(self.recommendations) + extras
+            + len(self.sport.today) + len(self.sport.recaps) * 2
         )

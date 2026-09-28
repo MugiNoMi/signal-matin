@@ -13,7 +13,7 @@ from pathlib import Path
 
 from .models import (
     AgendaItem, DensityMode, DigestItem, MorningEdition, NewsItem,
-    Recommendation, TaskItem,
+    Recommendation, SportEvent, SportTable, TaskItem,
 )
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -513,6 +513,86 @@ def notes_space(tall: bool = False) -> str:
     )
 
 
+def _sport_rank(event: SportEvent) -> tuple[int, str]:
+    order = {"basketball": 0, "football": 1, "tennis": 2}
+    return (0 if event.highlight else 1 + order.get(event.sport, 3), event.when)
+
+
+def sport_front_block(edition: MorningEdition, limit: int = 4) -> str:
+    sport = edition.sport
+    rows = []
+    for recap in [r for r in sport.recaps if r.highlight][:1]:
+        rows.append(f'<li><span>Nuit</span><p><strong>{_e(recap.headline)}</strong></p></li>')
+    for event in sorted(sport.today, key=_sport_rank)[:limit - len(rows)]:
+        when, context = event.when, event.competition
+        if event.sport == "basketball" and " (" in when:
+            # « 19h30 heure de San Antonio (jeu. 22/10 à 2h30 heure de Paris) »
+            local, paris = when.split(" (", 1)
+            when = local.split(" ")[0]
+            context = f"{event.competition} · heure US · {paris.rstrip(')')}"
+        rows.append(
+            f'<li><span>{_e(_truncate(when, 18))}</span><p><strong>{_e(_truncate(event.label, 70))}</strong>'
+            f' <small>{_e(_truncate(context, 70))}</small></p></li>'
+        )
+    if not rows:
+        return ""
+    more = len(sport.today) + len(sport.recaps) - len(rows)
+    tail = f'<p class="sport-front-more">+ {more} en page Sport</p>' if more > 0 else ""
+    return (f'<section class="sport-front">{section_header("A suivre", "Sport")}'
+            f'<ol>{"".join(rows)}</ol>{tail}</section>')
+
+
+def _sport_table(table: SportTable) -> str:
+    def render(rows: list[list[str]]) -> str:
+        head = "".join(f"<th>{_e(column)}</th>" for column in table.columns)
+        body = "".join(
+            f'<tr{" class=\"is-highlight\"" if table.highlight and table.highlight in row else ""}>'
+            + "".join(f"<td>{_e(cell)}</td>" for cell in row) + "</tr>"
+            for row in rows
+        )
+        return f'<table class="sport-table"><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>'
+
+    rows = table.rows
+    halves = [rows] if len(rows) <= 20 else [rows[:(len(rows) + 1) // 2], rows[(len(rows) + 1) // 2:]]
+    note = f'<p class="sport-table-note">{_e(table.note)}</p>' if table.note else ""
+    return (f'<div class="sport-table-block"><h3>{_e(table.title)}</h3>'
+            f'<div class="sport-table-split">{"".join(render(h) for h in halves)}</div>{note}</div>')
+
+
+def _page_sport(edition: MorningEdition, number: int) -> str:
+    sport = edition.sport
+    body = section_header("Sport", "Les matchs du jour et de la nuit")
+    if sport.notes:
+        body += '<aside class="sport-notes">' + "".join(
+            f"<span>{_e(note)}</span>" for note in sport.notes) + "</aside>"
+    groups: dict[str, list[SportEvent]] = {}
+    for event in sorted(sport.today, key=_sport_rank):
+        groups.setdefault(event.competition, []).append(event)
+    for competition, events in groups.items():
+        items = "".join(
+            f'<li{" class=\"is-highlight\"" if event.highlight else ""}><time>{_e(event.when)}</time>'
+            f'<div><strong>{_e(event.label)}</strong>'
+            f'{f"<small>{_e(event.detail)}</small>" if event.detail else ""}</div></li>'
+            for event in events
+        )
+        body += f'<section class="sport-group"><h3>{_e(competition)}</h3><ol>{items}</ol></section>'
+    if not sport.today:
+        body += '<p class="sport-empty">Aucun match suivi aujourd hui.</p>'
+    if sport.recaps:
+        # Chaque résumé est un bloc direct de la page : la pagination peut
+        # ainsi répartir une longue nuit de NBA sur plusieurs pages.
+        body += '<h3 class="sport-recaps-title">Cette nuit</h3>'
+        body += "".join(
+            f'<article class="sport-recap{" is-highlight" if recap.highlight else ""}">'
+            f'<h4>{_e(recap.headline)}</h4><div>'
+            + "".join(f"<p>{_e(line)}</p>" for line in recap.lines) + "</div></article>"
+            for recap in sport.recaps
+        )
+    for table in sport.tables:
+        body += _sport_table(table)
+    return _page(edition, number, "Sport", body, slug="sport")
+
+
 def _page(edition: MorningEdition, number: int, label: str, content: str,
           first: bool = False, slug: str = "") -> str:
     header = masthead(edition) if first else f"""
@@ -539,10 +619,16 @@ def _page_one(edition: MorningEdition) -> str:
         task_list("A ne pas oublier", edition.reminders, 3),
     ]))
     right = news_lead(edition.news.lead, 360) + news_briefs(secondary, FRONT_BRIEF_LIMIT)
-    right += '<div class="front-lower">'
-    right += digest_list("IA & tech", edition.tech, 1)
-    right += social_digest(edition, 1) or front_watch(edition.watch, 2)
-    right += '</div>'
+    # Les jours de sport, l'encadré « A suivre » remplace l'aperçu tech et
+    # veille de la une : ces rubriques ont leurs propres pages.
+    sport = sport_front_block(edition, 3)
+    if sport:
+        right += sport
+    else:
+        right += '<div class="front-lower">'
+        right += digest_list("IA & tech", edition.tech, 1)
+        right += social_digest(edition, 1) or front_watch(edition.watch, 2)
+        right += '</div>'
     right += front_pause(edition)
     tail = front_footer_band(edition)
     return _page(
@@ -972,13 +1058,21 @@ def render_html(edition: MorningEdition, css: str | None = None) -> str:
             has_more=part + 1 < len(detail_chunks),
         ))
         number += 1
+    has_sport = not edition.sport.is_empty()
     if mode == DensityMode.COMPACT:
         pages.append(_page_compact(edition, number, start=detail_count))
-        pages.append(_page_learning(edition, number + 1))
+        number += 1
+        if has_sport:
+            pages.append(_page_sport(edition, number))
+            number += 1
+        pages.append(_page_learning(edition, number))
     elif mode == DensityMode.STANDARD:
         news_pages = _pages_news(edition, number, start=detail_count)
         pages.extend(news_pages)
         number += len(news_pages)
+        if has_sport:
+            pages.append(_page_sport(edition, number))
+            number += 1
         tech_pages = _pages_tech(edition, number)
         pages.extend(tech_pages)
         number += len(tech_pages)
@@ -992,6 +1086,9 @@ def render_html(edition: MorningEdition, css: str | None = None) -> str:
         news_pages = _pages_news(edition, number, start=detail_count)
         pages.extend(news_pages)
         number += len(news_pages)
+        if has_sport:
+            pages.append(_page_sport(edition, number))
+            number += 1
         pages.append(_page_day(edition, number))
         number += 1
         tech_pages = _pages_tech(edition, number)

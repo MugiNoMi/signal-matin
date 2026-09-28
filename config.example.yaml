@@ -16,6 +16,7 @@ modules:
   games: true
   tech_vocabulary: true
   recommendations: true
+  sport: false            # page Sport + encadré « A suivre » en une
 
 weather:
   location: ""
@@ -50,6 +51,23 @@ tech:
   limit: 6
   max_age_hours: 96
   feeds: []
+
+# Sport (données publiques ESPN, sans clé). Chaque discipline est facultative.
+sport:
+  timezone: "Europe/Paris"
+  tennis:
+    tours: ["atp", "wta"]
+    top: 20                 # matchs du jour impliquant un joueur du top 20
+  football:
+    leagues:
+      - code: "uefa.champions"   # autres codes : fra.1, eng.1, esp.1, ita.1, ger.1...
+        name: "Ligue des champions"
+        table: "match_days"      # classement les jours de match ; "never" pour le masquer
+  nba:
+    team: "SA"                    # abréviation ESPN de l'équipe suivie
+    team_timezone: "America/Chicago"
+    recap_all_games: false        # true : résumé de tous les matchs de la nuit
+    standings_weekday: 6          # 0 = lundi ... 6 = dimanche
 
 recommendations: []
 personal:

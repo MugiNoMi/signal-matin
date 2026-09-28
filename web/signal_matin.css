@@ -501,3 +501,40 @@ footer { position: absolute; left: 11mm; right: 11mm; bottom: 6mm; display: flex
 @media screen and (max-width: 900px) {
   .publication { transform-origin: top left; }
 }
+
+/* Sport : encadré de une et page dédiée */
+.sport-front { margin-bottom: 3.6mm; }
+.sport-front ol { list-style: none; margin: 0; padding: 0; }
+.sport-front li { display: grid; grid-template-columns: 13mm 1fr; gap: 2mm; padding: 1.1mm 0; border-bottom: var(--hairline) solid var(--shade); }
+.sport-front li > span { font: 700 6.1pt var(--sans); letter-spacing: .04em; text-transform: uppercase; }
+.sport-front li p { margin: 0; font-size: 7.6pt; line-height: 1.15; }
+.sport-front li small { display: block; margin-top: .4mm; color: var(--muted); font: 6.3pt/1.2 var(--sans); }
+.sport-front-more { margin: 1mm 0 0; color: var(--muted); font: italic 6.5pt var(--sans); }
+.sport-notes { display: flex; flex-wrap: wrap; gap: 1.5mm 5mm; margin: 0 0 3.5mm; padding: 1.6mm 2.4mm; background: var(--wash); font: 700 7.4pt var(--sans); }
+.sport-group { margin-bottom: 3.6mm; break-inside: avoid; }
+.sport-group h3, .sport-table-block h3 { margin: 0 0 1.4mm; padding-bottom: .8mm; border-bottom: var(--rule) solid var(--ink); font: 700 7.2pt var(--sans); letter-spacing: .08em; text-transform: uppercase; }
+.sport-group ol { list-style: none; margin: 0; padding: 0; columns: 2; column-gap: 6mm; column-rule: var(--hairline) solid var(--shade); }
+.sport-group li { display: grid; grid-template-columns: 24mm 1fr; gap: 2mm; padding: 1.2mm 0; border-bottom: var(--hairline) solid var(--shade); break-inside: avoid; }
+.sport-group li time { font: 700 6.4pt/1.25 var(--sans); }
+.sport-group li strong { display: block; font-size: 8.6pt; line-height: 1.15; }
+.sport-group li small { display: block; margin-top: .5mm; color: var(--muted); font: 6.6pt/1.2 var(--sans); }
+.sport-group li.is-highlight { grid-template-columns: 1fr; column-span: all; padding: 2mm 2.4mm; border: var(--rule) solid var(--ink); }
+.sport-group li.is-highlight strong { font-family: var(--display); font-size: 14pt; letter-spacing: -.03em; }
+.sport-group:has(li.is-highlight) ol { columns: 1; }
+.sport-empty { margin: 0 0 3.6mm; color: var(--muted); font-style: italic; }
+.sport-recaps-title { margin: 1mm 0 1.4mm; padding-bottom: .8mm; border-bottom: var(--rule) solid var(--ink); font: 700 7.2pt var(--sans); letter-spacing: .08em; text-transform: uppercase; }
+.sport-recap { display: grid; grid-template-columns: 52mm 1fr; gap: 4mm; padding: 1.4mm 0; border-bottom: var(--hairline) solid var(--shade); break-inside: avoid; }
+.sport-recap h4 { margin: 0; font-family: var(--display); font-size: 11pt; line-height: 1.1; letter-spacing: -.03em; }
+.sport-recap p { margin: 0 0 .4mm; font-size: 7.5pt; line-height: 1.25; }
+.sport-recap.is-highlight { grid-template-columns: 1fr; gap: 1mm; margin-bottom: 1.5mm; padding: 2mm 2.4mm; border: var(--rule) solid var(--ink); }
+.sport-recap.is-highlight h4 { font-size: 15pt; }
+.sport-recap.is-highlight p:first-child { font: italic 7pt var(--sans); color: var(--muted); }
+.sport-table-block { margin-bottom: 3.6mm; break-inside: avoid; }
+.sport-table-split { display: grid; grid-template-columns: repeat(auto-fit, minmax(60mm, 1fr)); gap: 6mm; }
+.sport-table { width: 100%; border-collapse: collapse; font: 6.8pt/1.2 var(--sans); }
+.sport-table th { text-align: left; padding: .6mm 1mm; border-bottom: var(--hairline) solid var(--ink); font-size: 6pt; letter-spacing: .05em; text-transform: uppercase; }
+.sport-table td { padding: .55mm 1mm; border-bottom: var(--hairline) solid var(--shade); }
+.sport-table td:first-child, .sport-table th:first-child { width: 6mm; text-align: right; }
+.sport-table td:nth-child(n+3), .sport-table th:nth-child(n+3) { text-align: right; }
+.sport-table tr.is-highlight td { font-weight: 700; background: var(--wash); }
+.sport-table-note { margin: 1mm 0 0; color: var(--muted); font: italic 6.5pt var(--sans); }
