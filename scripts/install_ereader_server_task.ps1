@@ -3,6 +3,7 @@ param(
     [int]$Port = 8844,
     [switch]$Demo,
     [switch]$WithPdf,
+    [string]$InputDir = "",
     [switch]$OpenFirewall
 )
 
@@ -18,6 +19,9 @@ $Main = Join-Path $Root "main.py"
 $Mode = if ($Demo) { "--demo" } else { "--live" }
 $Format = if ($WithPdf) { "both" } else { "epub" }
 $Arguments = "`"$Main`" serve $Mode --host 0.0.0.0 --port $Port --refresh-at `"$Time`" --format $Format"
+if ($InputDir) {
+    $Arguments += " --input-dir `"$InputDir`""
+}
 
 $Action = New-ScheduledTaskAction -Execute $Python -Argument $Arguments -WorkingDirectory $Root
 $Trigger = New-ScheduledTaskTrigger -AtLogOn

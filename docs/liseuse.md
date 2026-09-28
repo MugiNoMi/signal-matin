@@ -104,6 +104,18 @@ la plupart des liseuses ne permettent pas à une page web de télécharger un
 fichier toute seule en arrière-plan : il reste normalement un toucher sur le
 favori, puis sur le bouton de téléchargement.
 
+Si un autre outil produit déjà une édition normalisée Signal Matin, la page peut
+la reprendre sans dupliquer ses connecteurs ni ses secrets :
+
+```powershell
+signal-matin serve --host 0.0.0.0 --input-dir "D:\journaux\data"
+```
+
+Le serveur attend dans ce dossier un fichier nommé
+`AAAA-MM-JJ-signal-matin.json`. Tant qu'il n'est pas disponible, il conserve
+l'édition précédente et réessaie automatiquement. Cette passerelle reste
+facultative : l'installation autonome normale utilise directement `--live`.
+
 Pour publier aussi un PDF e-ink :
 
 ```powershell

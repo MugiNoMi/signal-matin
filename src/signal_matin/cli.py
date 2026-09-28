@@ -133,6 +133,10 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--screen", choices=tuple(SCREEN_PROFILES), default="medium")
     serve.add_argument("--output-dir", default="output/ereader")
     serve.add_argument(
+        "--input-dir", default="",
+        help="dossier facultatif contenant AAAA-MM-JJ-signal-matin.json",
+    )
+    serve.add_argument(
         "--show-url-only", action="store_true",
         help="affiche le favori privé sans démarrer un second serveur",
     )
@@ -167,14 +171,24 @@ def main(argv: list[str] | None = None) -> int:
             return 0
 
         def publish(date: dt.date) -> None:
-            publication_args = argparse.Namespace(
-                input=None,
-                demo=args.demo,
-                live=args.live,
-                date=date,
-                mode=args.mode,
-            )
-            edition = _edition(publication_args, config)
+            if args.input_dir:
+                input_dir = Path(args.input_dir)
+                if not input_dir.is_absolute():
+                    input_dir = ROOT / input_dir
+                input_path = input_dir / f"{date.isoformat()}-signal-matin.json"
+                if not input_path.is_file():
+                    raise FileNotFoundError(
+                        f"édition normalisée du jour encore absente : {input_path}")
+                edition = charger_edition(input_path, mode=args.mode)
+            else:
+                publication_args = argparse.Namespace(
+                    input=None,
+                    demo=args.demo,
+                    live=args.live,
+                    date=date,
+                    mode=args.mode,
+                )
+                edition = _edition(publication_args, config)
             epub_path = output_dir / f"{date.isoformat()}-signal-matin.epub"
             generer_epub(edition, epub_path)
             if args.format == "both":
