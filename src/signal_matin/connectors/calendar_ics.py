@@ -69,7 +69,9 @@ def collect_ics(
     events.sort(key=lambda item: item.start or day_start)
     return events[:24], DataSourceStatus(
         name="Agenda ICS",
-        state=DataState.LIVE if events else DataState.UNAVAILABLE,
-        detail=f"{len(sources) - failures}/{len(sources)} calendriers lus",
+        # Un agenda bien lu mais vide aujourd'hui n'est pas « indisponible ».
+        state=DataState.LIVE if failures < len(sources) else DataState.UNAVAILABLE,
+        detail=f"{len(sources) - failures}/{len(sources)} calendriers lus"
+               + ("" if events else ", aucun événement aujourd'hui"),
         item_count=len(events[:24]),
     )

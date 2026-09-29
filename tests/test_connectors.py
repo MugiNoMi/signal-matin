@@ -44,3 +44,19 @@ def test_ics_expands_recurring_events(tmp_path):
     now = dt.datetime(2026, 9, 29, 6, 50, tzinfo=ZoneInfo("Europe/Paris"))
     items, status = collect_ics(["agenda.ics"], now, tmp_path)
     assert [(item.title, item.start.hour) for item in items] == [("Point hebdo", 9)]
+
+
+def test_ics_empty_day_is_live_but_unreadable_source_is_not(tmp_path):
+    import datetime as dt
+    from zoneinfo import ZoneInfo
+
+    from signal_matin.connectors.calendar_ics import collect_ics
+    from signal_matin.models import DataState
+
+    (tmp_path / "vide.ics").write_text("BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR\n", encoding="utf-8")
+    now = dt.datetime(2026, 9, 29, 6, 50, tzinfo=ZoneInfo("Europe/Paris"))
+    items, status = collect_ics(["vide.ics"], now, tmp_path)
+    assert items == [] and status.state == DataState.LIVE
+    assert "aucun événement" in status.detail
+    _, status = collect_ics(["absent.ics"], now, tmp_path)
+    assert status.state == DataState.UNAVAILABLE
