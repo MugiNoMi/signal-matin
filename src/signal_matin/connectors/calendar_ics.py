@@ -35,11 +35,12 @@ def collect_ics(
             name="Agenda ICS", state=DataState.DISABLED, detail="Aucune source ICS configuree.",
         )
     try:
+        import recurring_ical_events
         from icalendar import Calendar
     except ImportError:
         return [], DataSourceStatus(
             name="Agenda ICS", state=DataState.UNAVAILABLE,
-            detail="Installe la dependance icalendar.",
+            detail="Installe les dependances icalendar et recurring-ical-events.",
         )
     day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     day_end = day_start + dt.timedelta(days=1)
@@ -50,7 +51,9 @@ def collect_ics(
         label = str(entry.get("name") or entry.get("nom") or "ICS") if isinstance(entry, dict) else "ICS"
         try:
             calendar = Calendar.from_ical(_read(source, root))
-            for component in calendar.walk("VEVENT"):
+            # Déplie les événements récurrents (réunions hebdomadaires, anniversaires...).
+            occurrences = recurring_ical_events.of(calendar).between(day_start, day_end)
+            for component in occurrences:
                 start, all_day = _datetime(component.decoded("DTSTART"), now.tzinfo or dt.timezone.utc)
                 if start is None or not (day_start <= start < day_end):
                     continue

@@ -6,16 +6,15 @@ from pathlib import Path
 
 from .config import ROOT, setting
 from .connectors import (
-    collect_google_calendar, collect_ics, collect_markets, collect_rss, collect_sport,
-    collect_tasks,
-    collect_weather,
+    collect_google_calendar, collect_ics, collect_mail, collect_markets, collect_rss,
+    collect_sport, collect_tasks, collect_weather,
 )
 from .daily_learning import construire_apprentissage_du_jour
 from .editorial import rediger_avec_claude
 from .models import (
     DataSourceStatus, DataState, DigestItem, EditionMeta, Extras, Importance,
-    LearningPage, MarketsPage, MorningEdition, NewsBundle, NewsItem, PersonalBlock,
-    QuoteBlock, Recommendation, SourceRef, SportPage,
+    LearningPage, MailDigest, MarketsPage, MorningEdition, NewsBundle, NewsItem,
+    PersonalBlock, QuoteBlock, Recommendation, SourceRef, SportPage,
 )
 from .normalizer import normaliser_edition
 
@@ -128,6 +127,14 @@ def build_live(
         markets, markets_status = MarketsPage(), _disabled("Marches")
     statuses.append(markets_status)
 
+    mails = []
+    mail_digest = MailDigest()
+    if _enabled(config, "mail", False):
+        mails, mail_status = collect_mail(setting(config, "mail", {}) or {}, now)
+        # Sans rédaction IA, une simple liste expéditeur + objet.
+        mail_digest = MailDigest(unread=len(mails), fyi=[mail.item for mail in mails[:8]])
+        statuses.append(mail_status)
+
     tech_digest = [DigestItem(
         title=item.title, summary=item.summary, source=item.source,
         importance=item.importance,
@@ -165,6 +172,7 @@ def build_live(
         curiosity_news=curiosities,
         sport=sport,
         markets=markets,
+        mail=mail_digest,
         recommendations=recommendations,
         personal=PersonalBlock(
             greeting=str(setting(config, "personal.greeting", "Bonjour.") or "Bonjour."),
@@ -178,6 +186,7 @@ def build_live(
     )
     # En dernier : Claude rédige à partir de tout ce qui a été collecté.
     if _enabled(config, "ai", False):
-        edition, ai_status = rediger_avec_claude(edition, setting(config, "ai", {}) or {})
+        edition, ai_status = rediger_avec_claude(
+            edition, setting(config, "ai", {}) or {}, mails=mails)
         edition = edition.model_copy(update={"sources": [*edition.sources, ai_status]})
     return normaliser_edition(edition, mode=mode)

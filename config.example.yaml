@@ -20,6 +20,7 @@ modules:
   sport: false            # page Sport + encadré « A suivre » en une
   markets: false          # bandeau des cours en une + page Marchés
   ai: false               # édito et résumés rédigés par Claude (clé ANTHROPIC_API_KEY)
+  mail: false             # mails non lus (IMAP, lecture seule), triés par Claude si ai est actif
 
 weather:
   location: ""
@@ -30,6 +31,8 @@ calendar:
   ics: []
   # - name: "Agenda personnel"
   #   source: "calendars/agenda.ics" # chemin local ou URL privée placée seulement ici
+  # - name: "Google Agenda"
+  #   source: "${GOOGLE_ICS_URL}"   # adresse secrète iCal, gardée dans .env
   google:
     enabled: false
     calendar_id: "primary"
@@ -89,6 +92,16 @@ markets:
     enabled: true
     countries: ["USD", "EUR"]
     impact: ["High", "Medium"]
+
+# Mails non lus des dernières 24 h, en lecture seule (rien n'est marqué comme lu).
+# Avec Gmail, le mot de passe d'application de l'envoi suffit. Si le module ai est
+# actif, le texte des mails est transmis à Claude pour être trié.
+mail:
+  imap_host: "imap.gmail.com"
+  username: "${SMTP_USERNAME}"
+  password: "${SMTP_PASSWORD}"
+  query: "is:unread newer_than:1d category:primary"   # recherche Gmail
+  limit: 25
 
 # Rédaction par Claude (extra [ai] : pip install -e ".[ai]"). Claude ne reçoit que
 # les titres et extraits de l'édition et n'ajoute aucun fait. Coût indicatif avec

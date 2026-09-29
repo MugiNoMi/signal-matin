@@ -264,6 +264,24 @@ class MarketsPage(Modele):
         return not (self.quotes or self.movers or self.agenda)
 
 
+class MailItem(Modele):
+    sender: str = Field(min_length=1, max_length=120)
+    subject: str = Field(min_length=1, max_length=240)
+    received: dt.datetime | None = None
+    note: str = Field(default="", max_length=240)
+
+
+class MailDigest(Modele):
+    """Mails non lus : triés par l'IA quand elle est active, sinon listés tels quels."""
+    unread: int = Field(default=0, ge=0)
+    summary: str = Field(default="", max_length=400)
+    to_handle: list[MailItem] = Field(default_factory=list, max_length=10)
+    fyi: list[MailItem] = Field(default_factory=list, max_length=12)
+
+    def is_empty(self) -> bool:
+        return not (self.to_handle or self.fyi or self.summary)
+
+
 class EditorialBlock(Modele):
     """Textes rédigés par une IA à partir des seules sources de l'édition."""
     title: str = Field(min_length=1, max_length=140)
@@ -304,6 +322,7 @@ class MorningEdition(Modele):
     sport: SportPage = Field(default_factory=SportPage)
     markets: MarketsPage = Field(default_factory=MarketsPage)
     editorial: EditorialBlock | None = None
+    mail: MailDigest = Field(default_factory=MailDigest)
 
     @field_validator("generated_at")
     @classmethod

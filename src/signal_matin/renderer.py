@@ -218,6 +218,32 @@ def insight_block(label: str, text: str) -> str:
     return f'<aside class="ai-insight"><span>{_e(label)}</span><p>{_e(_truncate(text, 700))}</p></aside>'
 
 
+def mail_block(edition: MorningEdition, limit: int = 4, *, front: bool = False) -> str:
+    mail = edition.mail
+    if mail.is_empty():
+        return ""
+    items = mail.to_handle or ([] if front else mail.fyi)
+    if front and not items:
+        items = mail.fyi
+    rows = "".join(
+        f'<li><strong>{_e(_truncate(item.sender, 40))}</strong>'
+        f'<span>{_e(_truncate(item.note or item.subject, 120))}</span></li>'
+        for item in items[:limit]
+    )
+    eyebrow = f"{mail.unread} non lu{'s' if mail.unread > 1 else ''}" if mail.unread else ""
+    title = "A traiter" if mail.to_handle else "Tes mails"
+    body = f'<p class="mail-summary">{_e(_truncate(mail.summary, 220))}</p>' if mail.summary else ""
+    if not front and mail.to_handle and mail.fyi:
+        fyi = "".join(
+            f'<li><strong>{_e(_truncate(item.sender, 40))}</strong>'
+            f'<span>{_e(_truncate(item.note or item.subject, 90))}</span></li>'
+            for item in mail.fyi[:limit]
+        )
+        rows += f'</ol><h4>Pour info</h4><ol class="mail-list is-fyi">{fyi}'
+    return (f'<section class="mail-block{" is-front" if front else ""}">'
+            f'{section_header(title, eyebrow)}{body}<ol class="mail-list">{rows}</ol></section>')
+
+
 def news_lead(item: NewsItem | None, summary_limit: int = 520) -> str:
     if item is None:
         return ""
@@ -723,12 +749,15 @@ def _page(edition: MorningEdition, number: int, label: str, content: str,
 def _page_one(edition: MorningEdition) -> str:
     secondary = edition.news.all_secondary()
     # Les jours d'édito, le bandeau du bas grandit : une ligne de moins par liste.
+    # Les jours de mails, les rappels cèdent leur place en une (ils restent en page 3).
     trim = 1 if edition.editorial else 0
+    mails = mail_block(edition, 2, front=True)
     left = "".join(filter(None, [
         weather_block(edition),
         agenda_block(edition.agenda, 5 - trim),
+        mails,
         task_list("Priorites", edition.priorities, 4 - trim),
-        task_list("A ne pas oublier", edition.reminders, 3 - trim),
+        "" if mails else task_list("A ne pas oublier", edition.reminders, 3 - trim),
     ]))
     lead = edition.news.lead
     # La ligne « pourquoi c'est important » prend la place d'une partie du chapeau.
@@ -841,6 +870,7 @@ def _page_day(edition: MorningEdition, number: int) -> str:
     {f'<p class="free-window"><span>Fenetre libre</span>{_e(_truncate(edition.personal.free_window, 240))}</p>' if edition.personal.free_window else ''}</div>"""
     body = section_header("Ta journee", "Direction et respiration") + intro
     body += '<div class="day-grid"><div>' + agenda_block(edition.agenda, 10)
+    body += mail_block(edition, 6)
     body += '</div><div>'
     body += task_list("Tes priorites", edition.priorities, 8)
     body += task_list("A ne pas oublier", edition.reminders, 8)
@@ -1104,6 +1134,7 @@ def _page_compact(edition: MorningEdition, number: int, start: int = 0) -> str:
     body += digest_list("IA & tech", edition.tech, 1 if tech_insight else 2)
     body += digest_list("A surveiller", edition.watch, 2)
     body += '</div><div>'
+    body += mail_block(edition, 3)
     compact_news = edition.news.all_secondary()[start:]
     if compact_news:
         selected = compact_news[:8]
@@ -1136,6 +1167,7 @@ def _page_standard_tail(edition: MorningEdition, number: int) -> str:
         body += notes_space()
     body += '</div><div>'
     body += section_header("Reseaux & liens")
+    body += mail_block(edition, 5)
     body += social_digest(edition, 5)
     body += digest_list("Boite de reception", edition.newsletter_digest, 3)
     body += '</div></div>'

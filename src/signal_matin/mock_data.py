@@ -6,7 +6,7 @@ import datetime as dt
 from .models import (
     AgendaItem, DataSourceStatus, DataState, DensityMode, DigestItem, EditionMeta, EditorialBlock,
     Extras, Illustration, Importance, MorningEdition, NewsBundle, NewsItem,
-    MacroEvent, MarketMover, MarketMovers, MarketQuote, MarketsPage,
+    MacroEvent, MailDigest, MailItem, MarketMover, MarketMovers, MarketQuote, MarketsPage,
     PersonalBlock, QuizBlock, QuoteBlock, Recommendation, SourceRef, SportEvent,
     SportPage, SportRecap, SportTable, TaskItem, WeatherBlock, WordOfTheDay,
 )
@@ -233,6 +233,18 @@ def construire_demo(date: dt.date | None = None) -> MorningEdition:
         learning=construire_apprentissage_du_jour(date),
         sport=_sport_demo(date, at),
         markets=_markets_demo(),
+        mail=MailDigest(
+            unread=6,
+            summary="DEMO - Deux mails demandent une réponse, le reste peut attendre.",
+            to_handle=[
+                MailItem(sender="DEMO - Collègue", subject="Réunion jeudi",
+                         note="Confirmer ta présence à la réunion de jeudi."),
+                MailItem(sender="DEMO - Banque", subject="Document à signer",
+                         note="Signer le document avant vendredi."),
+            ],
+            fyi=[MailItem(sender="DEMO - Association", subject="Compte rendu",
+                          note="Compte rendu de l'assemblée, rien à faire.")],
+        ),
         editorial=EditorialBlock(
             title="DEMO - L'essentiel du matin",
             text=("Cet édito fictif montre la place du texte rédigé par Claude chaque matin. "
