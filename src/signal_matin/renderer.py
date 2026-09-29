@@ -45,6 +45,10 @@ def _truncate(value: str, limit: int) -> str:
     value = " ".join(str(value or "").split())
     if len(value) <= limit:
         return value
+    # Couper de préférence à la fin d'une phrase, si elle garde l'essentiel.
+    sentence_end = max(value.rfind(mark, 0, limit + 1) for mark in (". ", "! ", "? "))
+    if sentence_end >= limit * 0.55:
+        return value[:sentence_end + 1]
     short = value[:limit].rsplit(" ", 1)[0].rstrip(" ,;:-")
     return short + "..."
 
@@ -363,9 +367,10 @@ def front_footer_band(edition: MorningEdition) -> str:
         editorial = edition.editorial
         return (
             '<section class="front-footer-band has-edito"><aside class="front-edito">'
-            f'<span>L’édito du matin</span><h3>{_e(_truncate(editorial.title, 120))}</h3>'
+            '<header><span>L’édito du matin</span>'
+            '<small>Rédigé par Claude à partir des seules dépêches de cette édition</small></header>'
+            f'<h3>{_e(_truncate(editorial.title, 120))}</h3>'
             f'<p>{_e(_truncate(editorial.text, 760))}</p>'
-            '<small>Rédigé par Claude à partir des seules dépêches de cette édition.</small>'
             '</aside></section>'
         )
     pieces: list[str] = []

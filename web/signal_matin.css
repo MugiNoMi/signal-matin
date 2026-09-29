@@ -568,7 +568,8 @@ footer { position: absolute; left: 11mm; right: 11mm; bottom: 6mm; display: flex
 .front-edito { padding-right: 0; }
 .front-edito h3 { margin: .6mm 0 1mm; font-family: var(--display); font-size: 12pt; line-height: 1.05; letter-spacing: -.03em; }
 .front-edito p { margin: 0; columns: 2; column-gap: 5mm; column-rule: var(--hairline) solid var(--shade); font-size: 7.7pt; line-height: 1.27; text-align: justify; hyphens: auto; }
-.front-edito small { display: block; margin-top: .8mm; color: var(--muted); font: italic 5.6pt var(--sans); }
+.front-edito header { display: flex; justify-content: space-between; align-items: baseline; gap: 3mm; }
+.front-edito small { color: var(--muted); font: italic 5.6pt var(--sans); }
 .why-it-matters { margin: 1.2mm 0 0; padding-left: 2mm; border-left: .6mm solid var(--ink); font-size: 7.6pt; line-height: 1.25; }
 .why-it-matters b { font-family: var(--sans); font-size: 6.6pt; text-transform: uppercase; letter-spacing: .04em; }
 .ai-insight { margin: 0 0 3.4mm; padding: 1.8mm 2.4mm; background: var(--wash); break-inside: avoid; }
