@@ -229,8 +229,20 @@ def collect_local_events(config: dict, now: dt.datetime) -> tuple[list[LocalEven
         if event.start <= sunday and (event.end or event.start) >= today:
             seen.add(event.title)
             weekend.append(event)
-    # Les rendez-vous ponctuels d'abord, les longues expositions ensuite.
-    weekend.sort(key=lambda e: (bool(e.category), ((e.end or e.start) - e.start).days, e.start))
+    # Les rendez-vous ponctuels d'abord, répartis sur les jours restants (un par jour à
+    # tour de rôle), puis les longues expositions.
+    one_offs = [e for e in weekend if not e.category and (e.end or e.start) == e.start]
+    by_day: dict[dt.date, list[LocalEvent]] = {}
+    for event in one_offs:
+        by_day.setdefault(max(event.start, today), []).append(event)
+    spread = []
+    while any(by_day.values()):
+        for day in sorted(by_day):
+            if by_day[day]:
+                spread.append(by_day[day].pop(0))
+    others = sorted((e for e in weekend if e not in one_offs),
+                    key=lambda e: (bool(e.category), ((e.end or e.start) - e.start).days))
+    weekend = spread + others
     limit = int(config.get("limit") or 8)
     return weekend[:limit], DataSourceStatus(
         name="Sorties", state=DataState.LIVE if weekend else DataState.UNAVAILABLE,

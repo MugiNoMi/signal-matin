@@ -106,3 +106,13 @@ def test_local_page_and_front_line_render():
     assert 'class="ephemeris-line"' in html and "Bonne fête aux Prénom A et Prénom B" in html
     assert "C’était un 2 octobre" in html and "Sorties du week-end" in html
     assert "Vendredi 2 octobre" in html
+
+
+def test_weekend_outings_are_spread_over_the_days(monkeypatch):
+    page = "".join(
+        f'<a data-layer-wpet-offer-title="{title}">{day} oct. 2026 CLUNY</a>'
+        for title, day in (("Ven 1", "Vendredi 02"), ("Ven 2", "Vendredi 02"),
+                           ("Sam 1", "Samedi 03"), ("Dim 1", "Dimanche 04")))
+    monkeypatch.setattr(local, "_get", lambda url: page.encode())
+    events, _ = local.collect_local_events({"url": "x"}, FRIDAY)
+    assert [e.title for e in events] == ["Ven 1", "Sam 1", "Dim 1", "Ven 2"]
