@@ -8,7 +8,7 @@ HOST="$1"; KEY="${2:-$HOME/.ssh/id_ed25519}"; TEST_RUN=1
 [ "${3:-}" = "--no-test" ] && TEST_RUN=0
 SSH=(ssh -i "$KEY" "$HOST")
 
-"${SSH[@]}" 'mkdir -p /opt/signal-matin/app /opt/signal-matin/output'
+"${SSH[@]}" 'mkdir -p /opt/signal-matin/app /opt/signal-matin/output /opt/signal-matin/secrets && chmod 700 /opt/signal-matin/secrets'
 rsync -az --delete --exclude-from=.dockerignore -e "ssh -i $KEY" ./ "$HOST":/opt/signal-matin/app/
 
 "${SSH[@]}" TEST_RUN=$TEST_RUN bash -s <<'REMOTE'

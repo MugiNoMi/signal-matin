@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .config import ROOT, load_config, setting
 from .connectors.google_calendar import authorize_google
+from .connectors.google_tasks import SCOPES as GOOGLE_TASKS_SCOPES
 from .ereader import SCREEN_PROFILES, generer_epub, generer_pdf_liseuse
 from .ereader_server import (
     DailyPublisher,
@@ -159,6 +160,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     auth = sub.add_parser("auth-google", help="connecte Google Calendar en lecture seule")
     auth.add_argument("--config", default="config.yaml")
+    auth.add_argument("--tasks", action="store_true",
+                      help="connecte Google Tasks (lecture seule) au lieu de Calendar")
     return parser
 
 
@@ -169,7 +172,11 @@ def main(argv: list[str] | None = None) -> int:
         # Densité fixée dans config.yaml (paper.density), sinon choix automatique.
         args.mode = str(setting(config, "paper.density", "auto") or "auto")
     if args.command == "auth-google":
-        token = authorize_google(setting(config, "calendar.google", {}) or {}, ROOT)
+        if args.tasks:
+            token = authorize_google(setting(config, "tasks.google", {}) or {}, ROOT,
+                                     scopes=GOOGLE_TASKS_SCOPES)
+        else:
+            token = authorize_google(setting(config, "calendar.google", {}) or {}, ROOT)
         print(f"Jeton OAuth enregistre localement: {token}")
         return 0
     if args.command == "serve":

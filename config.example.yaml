@@ -40,6 +40,13 @@ calendar:
     token_file: "${GOOGLE_TOKEN_FILE}"
 
 tasks:
+  # Google Tasks en lecture seule : tâches en retard ou du jour -> priorités,
+  # tâches sans date -> rappels. Autorisation : signal-matin auth-google --tasks
+  google:
+    enabled: false
+    credentials_file: "credentials.json"          # client OAuth « application de bureau »
+    token_file: "secrets/google_tasks_token.json"
+    lists: []                                      # vide = toutes les listes
   priorities: []
   # - title: "Finaliser le dossier"
   #   importance: "high"

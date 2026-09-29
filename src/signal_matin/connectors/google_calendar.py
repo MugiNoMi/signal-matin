@@ -18,7 +18,7 @@ def _paths(config: dict, root: Path) -> tuple[Path, Path]:
     )
 
 
-def authorize_google(config: dict, root: Path) -> Path:
+def authorize_google(config: dict, root: Path, scopes: list[str] | None = None) -> Path:
     try:
         from google_auth_oauthlib.flow import InstalledAppFlow
     except ImportError as error:
@@ -26,7 +26,7 @@ def authorize_google(config: dict, root: Path) -> Path:
     credentials, token = _paths(config, root)
     if not credentials.exists():
         raise FileNotFoundError(f"Fichier OAuth introuvable: {credentials}")
-    flow = InstalledAppFlow.from_client_secrets_file(str(credentials), SCOPES)
+    flow = InstalledAppFlow.from_client_secrets_file(str(credentials), scopes or SCOPES)
     creds = flow.run_local_server(port=0)
     token.parent.mkdir(parents=True, exist_ok=True)
     token.write_text(creds.to_json(), encoding="utf-8")

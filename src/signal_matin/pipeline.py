@@ -6,8 +6,8 @@ from pathlib import Path
 
 from .config import ROOT, setting
 from .connectors import (
-    collect_google_calendar, collect_ics, collect_mail, collect_markets, collect_rss,
-    collect_sport, collect_tasks, collect_weather,
+    collect_google_calendar, collect_google_tasks, collect_ics, collect_mail, collect_markets,
+    collect_rss, collect_sport, collect_tasks, collect_weather,
 )
 from .daily_learning import construire_apprentissage_du_jour
 from .editorial import rediger_avec_claude
@@ -88,6 +88,12 @@ def build_live(
 
     if _enabled(config, "tasks"):
         priorities, reminders, task_status = collect_tasks(setting(config, "tasks", {}) or {})
+        google_tasks = setting(config, "tasks.google", {}) or {}
+        if bool(google_tasks.get("enabled", False)):
+            more_priorities, more_reminders, google_status = collect_google_tasks(
+                google_tasks, now, root)
+            priorities, reminders = priorities + more_priorities, reminders + more_reminders
+            statuses.append(google_status)
     else:
         priorities, reminders, task_status = [], [], _disabled("Taches")
     statuses.append(task_status)
