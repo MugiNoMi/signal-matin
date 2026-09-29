@@ -562,3 +562,15 @@ footer { position: absolute; left: 11mm; right: 11mm; bottom: 6mm; display: flex
 .market-agenda strong { display: block; font-size: 8.6pt; line-height: 1.15; }
 .market-agenda small { display: block; margin-top: .4mm; color: var(--muted); font: 6.6pt/1.2 var(--sans); }
 .market-disclaimer { margin: 0; color: var(--muted); font: italic 6.2pt var(--sans); }
+
+/* Rédaction par Claude : édito, « pourquoi c'est important », lectures */
+.front-footer-band.has-edito { display: block; }
+.front-edito { padding-right: 0; }
+.front-edito h3 { margin: .6mm 0 1mm; font-family: var(--display); font-size: 12pt; line-height: 1.05; letter-spacing: -.03em; }
+.front-edito p { margin: 0; columns: 2; column-gap: 5mm; column-rule: var(--hairline) solid var(--shade); font-size: 7.7pt; line-height: 1.27; text-align: justify; hyphens: auto; }
+.front-edito small { display: block; margin-top: .8mm; color: var(--muted); font: italic 5.6pt var(--sans); }
+.why-it-matters { margin: 1.2mm 0 0; padding-left: 2mm; border-left: .6mm solid var(--ink); font-size: 7.6pt; line-height: 1.25; }
+.why-it-matters b { font-family: var(--sans); font-size: 6.6pt; text-transform: uppercase; letter-spacing: .04em; }
+.ai-insight { margin: 0 0 3.4mm; padding: 1.8mm 2.4mm; background: var(--wash); break-inside: avoid; }
+.ai-insight span { font: 700 5.8pt var(--sans); text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.ai-insight p { margin: .8mm 0 0; font-size: 8pt; line-height: 1.3; font-style: italic; }

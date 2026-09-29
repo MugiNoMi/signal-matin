@@ -11,10 +11,10 @@ ENV TZ=Europe/Paris \
 
 WORKDIR /app
 COPY pyproject.toml uv.lock README.md ./
-RUN uv sync --frozen --no-install-project --extra google
+RUN uv sync --frozen --no-install-project --extra google --extra ai
 
 COPY . .
-RUN uv sync --frozen --extra google
+RUN uv sync --frozen --extra google --extra ai
 
 # config.yaml, .env et output/ sont montés depuis l'hôte : aucun secret dans l'image.
 ENTRYPOINT ["signal-matin"]

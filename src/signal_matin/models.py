@@ -101,6 +101,7 @@ class NewsItem(Modele):
     source: SourceRef
     importance: Importance = Importance.NORMAL
     illustration: Illustration | None = None
+    why_it_matters: str = Field(default="", max_length=400)
 
 
 class NewsBundle(Modele):
@@ -263,6 +264,15 @@ class MarketsPage(Modele):
         return not (self.quotes or self.movers or self.agenda)
 
 
+class EditorialBlock(Modele):
+    """Textes rédigés par une IA à partir des seules sources de l'édition."""
+    title: str = Field(min_length=1, max_length=140)
+    text: str = Field(min_length=1, max_length=1400)
+    tech_insight: str = Field(default="", max_length=900)
+    markets_insight: str = Field(default="", max_length=900)
+    author: str = Field(default="", max_length=80)
+
+
 class PersonalBlock(Modele):
     greeting: str = Field(default="Bonjour.", max_length=160)
     note: str = Field(default="", max_length=600)
@@ -293,6 +303,7 @@ class MorningEdition(Modele):
     learning: LearningPage = Field(default_factory=LearningPage)
     sport: SportPage = Field(default_factory=SportPage)
     markets: MarketsPage = Field(default_factory=MarketsPage)
+    editorial: EditorialBlock | None = None
 
     @field_validator("generated_at")
     @classmethod

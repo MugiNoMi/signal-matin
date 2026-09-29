@@ -4,7 +4,7 @@ from __future__ import annotations
 import datetime as dt
 
 from .models import (
-    AgendaItem, DataSourceStatus, DataState, DensityMode, DigestItem, EditionMeta,
+    AgendaItem, DataSourceStatus, DataState, DensityMode, DigestItem, EditionMeta, EditorialBlock,
     Extras, Illustration, Importance, MorningEdition, NewsBundle, NewsItem,
     MacroEvent, MarketMover, MarketMovers, MarketQuote, MarketsPage,
     PersonalBlock, QuizBlock, QuoteBlock, Recommendation, SourceRef, SportEvent,
@@ -108,7 +108,9 @@ def construire_demo(date: dt.date | None = None) -> MorningEdition:
         "Cette une est fictive. Elle montre comment Signal Matin hierarchise une information majeure, son contexte et ce qu'elle change concretement pour la journee.",
         Importance.HIGH,
         illustration=True,
-    )
+    ).model_copy(update={"why_it_matters": (
+        "DEMO - Une phrase d'enjeu rédigée par l'IA explique ce que l'information change pour toi."
+    )})
     tech_news = [
         _news(date, "Un modele local plus compact reduit la latence", "Tech", "Une architecture fictive montre comment reduire le temps de reponse sans abandonner les outils. Le cahier technique peut ainsi presenter le fait, son fonctionnement et ce qu'il change pour un usage quotidien.", Importance.HIGH),
         _news(date, "La voix devient une interface de fond", "Tech", "Trois produits imaginaires privilegient des interactions courtes, interruptibles et plus discretes. Cette histoire de demonstration sert a tester un article technique developpe."),
@@ -231,5 +233,18 @@ def construire_demo(date: dt.date | None = None) -> MorningEdition:
         learning=construire_apprentissage_du_jour(date),
         sport=_sport_demo(date, at),
         markets=_markets_demo(),
+        editorial=EditorialBlock(
+            title="DEMO - L'essentiel du matin",
+            text=("Cet édito fictif montre la place du texte rédigé par Claude chaque matin. "
+                  "Il relie les trois ou quatre informations majeures du jour et dit ce qu'il faut "
+                  "en retenir, sans rien ajouter aux dépêches reçues. Sa longueur est celle d'un "
+                  "vrai édito : cinq à six phrases, de quoi poser le contexte et relier les sujets. "
+                  "Il est composé sur deux colonnes en bas de la une. Si Claude est indisponible, "
+                  "ce bandeau retrouve sa forme habituelle et le journal sort quand même, "
+                  "simplement sans texte généré ce matin-là."),
+            tech_insight="DEMO - Une lecture courte de la veille tech et IA du jour.",
+            markets_insight="DEMO - Une lecture courte des marchés, sans conseil d'investissement.",
+            author="demo",
+        ),
     )
     return edition

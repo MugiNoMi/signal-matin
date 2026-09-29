@@ -201,6 +201,19 @@ def _source_line(item: NewsItem) -> str:
     return " / ".join(_e(bit) for bit in bits if bit)
 
 
+def why_line(item: NewsItem) -> str:
+    if not item.why_it_matters:
+        return ""
+    return (f'<p class="why-it-matters"><b>Pourquoi c’est important.</b> '
+            f'{_e(_truncate(item.why_it_matters, 300))}</p>')
+
+
+def insight_block(label: str, text: str) -> str:
+    if not text:
+        return ""
+    return f'<aside class="ai-insight"><span>{_e(label)}</span><p>{_e(_truncate(text, 700))}</p></aside>'
+
+
 def news_lead(item: NewsItem | None, summary_limit: int = 520) -> str:
     if item is None:
         return ""
@@ -210,6 +223,7 @@ def news_lead(item: NewsItem | None, summary_limit: int = 520) -> str:
       <h2>{_e(_truncate(item.title, 150))}</h2>
       {illustration_block(item)}
       <p class="standfirst">{_e(_truncate(item.summary, summary_limit))}</p>
+      {why_line(item)}
     </article>
     """
 
@@ -231,6 +245,7 @@ def news_feature(item: NewsItem, summary_limit: int = 420) -> str:
       <p class="article-meta">{_source_line(item)}</p>
       <h2>{_e(_truncate(item.title, 150))}</h2>
       <p class="feature-summary">{_e(_truncate(item.summary, summary_limit))}</p>
+      {why_line(item)}
     </article>
     """
 
@@ -291,7 +306,7 @@ def detailed_brief(item: NewsItem, *, featured: bool = False) -> str:
     <article class="brief-detail{' is-featured' if featured else ''}">
       <p class="article-meta">{_source_line(item)}</p>
       <{title_tag}>{_e(_truncate(item.title, 190))}</{title_tag}>
-      <div class="brief-copy">{paragraphs}</div>
+      <div class="brief-copy">{paragraphs}{why_line(item)}</div>
     </article>
     """
 
@@ -343,6 +358,16 @@ def front_watch(items: list[DigestItem], limit: int = 3) -> str:
 
 
 def front_footer_band(edition: MorningEdition) -> str:
+    if edition.editorial:
+        # Les jours où Claude écrit, l'édito occupe tout le bandeau.
+        editorial = edition.editorial
+        return (
+            '<section class="front-footer-band has-edito"><aside class="front-edito">'
+            f'<span>L’édito du matin</span><h3>{_e(_truncate(editorial.title, 120))}</h3>'
+            f'<p>{_e(_truncate(editorial.text, 760))}</p>'
+            '<small>Rédigé par Claude à partir des seules dépêches de cette édition.</small>'
+            '</aside></section>'
+        )
     pieces: list[str] = []
     note = edition.personal.note or edition.personal.greeting
     if note:
@@ -567,6 +592,8 @@ def _movers_block(movers: MarketMovers) -> str:
 def _page_markets(edition: MorningEdition, number: int) -> str:
     markets = edition.markets
     body = section_header("Marchés", "Clôtures de la veille, crypto sur 24 h")
+    if edition.editorial:
+        body += insight_block("La lecture des marchés", edition.editorial.markets_insight)
     if markets.quotes:
         rows = "".join(_quote_row(q) for q in markets.quotes)
         body += ('<section class="market-quotes"><table class="sport-table market-table">'
@@ -690,13 +717,18 @@ def _page(edition: MorningEdition, number: int, label: str, content: str,
 
 def _page_one(edition: MorningEdition) -> str:
     secondary = edition.news.all_secondary()
+    # Les jours d'édito, le bandeau du bas grandit : une ligne de moins par liste.
+    trim = 1 if edition.editorial else 0
     left = "".join(filter(None, [
         weather_block(edition),
-        agenda_block(edition.agenda, 5),
-        task_list("Priorites", edition.priorities, 4),
-        task_list("A ne pas oublier", edition.reminders, 3),
+        agenda_block(edition.agenda, 5 - trim),
+        task_list("Priorites", edition.priorities, 4 - trim),
+        task_list("A ne pas oublier", edition.reminders, 3 - trim),
     ]))
-    right = news_lead(edition.news.lead, 360) + news_briefs(secondary, FRONT_BRIEF_LIMIT)
+    lead = edition.news.lead
+    # La ligne « pourquoi c'est important » prend la place d'une partie du chapeau.
+    lead_limit = 240 if lead and lead.why_it_matters else 360
+    right = news_lead(lead, lead_limit) + news_briefs(secondary, FRONT_BRIEF_LIMIT)
     # Les jours de sport, l'encadré « A suivre » remplace l'aperçu tech et
     # veille de la une : ces rubriques ont leurs propres pages.
     sport = sport_front_block(edition, 3)
@@ -707,7 +739,8 @@ def _page_one(edition: MorningEdition) -> str:
         right += digest_list("IA & tech", edition.tech, 1)
         right += social_digest(edition, 1) or front_watch(edition.watch, 2)
         right += '</div>'
-    right += front_pause(edition)
+    if not edition.editorial:  # l'édito du bandeau prend cette place
+        right += front_pause(edition)
     tail = front_footer_band(edition)
     return _page(
         edition, 1, "Le briefing",
@@ -826,6 +859,8 @@ def _page_tech(
     has_continuation: bool = False,
 ) -> str:
     body = section_header("Technologie & IA", "Comprendre ce qui change vraiment")
+    if edition.editorial and not has_continuation:
+        body += insight_block("La lecture tech & IA", edition.editorial.tech_insight)
     items = edition.tech_news if items is None else items
     if items:
         featured_limit = 650 if has_continuation else 950
@@ -1058,7 +1093,10 @@ def _page_compact(edition: MorningEdition, number: int, start: int = 0) -> str:
     body = section_header("La suite du matin", "Journee, nouvelles et curiosite")
     body += '<div class="compact-grid"><div>'
     body += task_list("Rappels", edition.reminders, 5)
-    body += digest_list("IA & tech", edition.tech, 2)
+    tech_insight = insight_block(
+        "La lecture tech & IA", edition.editorial.tech_insight if edition.editorial else "")
+    body += tech_insight
+    body += digest_list("IA & tech", edition.tech, 1 if tech_insight else 2)
     body += digest_list("A surveiller", edition.watch, 2)
     body += '</div><div>'
     compact_news = edition.news.all_secondary()[start:]

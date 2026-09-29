@@ -19,6 +19,7 @@ modules:
   recommendations: true
   sport: false            # page Sport + encadré « A suivre » en une
   markets: false          # bandeau des cours en une + page Marchés
+  ai: false               # édito et résumés rédigés par Claude (clé ANTHROPIC_API_KEY)
 
 weather:
   location: ""
@@ -88,6 +89,15 @@ markets:
     enabled: true
     countries: ["USD", "EUR"]
     impact: ["High", "Medium"]
+
+# Rédaction par Claude (extra [ai] : pip install -e ".[ai]"). Claude ne reçoit que
+# les titres et extraits de l'édition et n'ajoute aucun fait. Coût indicatif avec
+# claude-opus-5-5 : quelques centimes par jour.
+ai:
+  model: "claude-opus-5-5"
+  effort: "medium"          # low, medium, high
+  tone: "complice"          # complice (tutoiement), serieux, concis
+  reader: "son lecteur"     # ex. « Mike, qui vit à Cluny »
 
 recommendations: []
 personal:

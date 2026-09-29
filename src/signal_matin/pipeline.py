@@ -11,6 +11,7 @@ from .connectors import (
     collect_weather,
 )
 from .daily_learning import construire_apprentissage_du_jour
+from .editorial import rediger_avec_claude
 from .models import (
     DataSourceStatus, DataState, DigestItem, EditionMeta, Extras, Importance,
     LearningPage, MarketsPage, MorningEdition, NewsBundle, NewsItem, PersonalBlock,
@@ -175,4 +176,8 @@ def build_live(
                   if _enabled(config, "games") or _enabled(config, "tech_vocabulary")
                   else LearningPage()),
     )
+    # En dernier : Claude rédige à partir de tout ce qui a été collecté.
+    if _enabled(config, "ai", False):
+        edition, ai_status = rediger_avec_claude(edition, setting(config, "ai", {}) or {})
+        edition = edition.model_copy(update={"sources": [*edition.sources, ai_status]})
     return normaliser_edition(edition, mode=mode)

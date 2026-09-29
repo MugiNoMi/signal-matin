@@ -30,6 +30,7 @@ google = [
   "google-auth-httplib2>=0.2",
   "google-auth-oauthlib>=1.2",
 ]
+ai = ["anthropic>=1.0"]
 dev = ["pytest>=8.0"]
 
 [project.scripts]
