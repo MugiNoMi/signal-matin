@@ -111,16 +111,31 @@ def _chart(symbol: str, range_: str, interval: str = "1d") -> dict[str, Any]:
     return data["chart"]["result"][0]
 
 
-def _closes(result: dict[str, Any], before: dt.date | None = None) -> list[float]:
-    """Clôtures, en ignorant la séance du jour même (pas encore terminée à l'aube)."""
+def _raw_closes(result: dict[str, Any]) -> list[float]:
     quote = (result.get("indicators", {}).get("quote") or [{}])[0]
-    exchange_tz = ZoneInfo(result.get("meta", {}).get("exchangeTimezoneName") or "UTC")
+    return [float(value) for value in quote.get("close") or [] if value is not None]
+
+
+def _closes(result: dict[str, Any], now: dt.datetime) -> list[float]:
+    """Clôtures des séances terminées uniquement.
+
+    Avant l'ouverture, Yahoo crée déjà une barre pour la séance du jour ; pendant
+    la séance, la dernière barre bouge encore. Les deux sont écartées pour que le
+    journal du matin compare bien la dernière séance clôturée à la précédente.
+    """
+    meta = result.get("meta", {})
+    quote = (result.get("indicators", {}).get("quote") or [{}])[0]
+    last_trade = meta.get("regularMarketTime")
+    session = (meta.get("currentTradingPeriod") or {}).get("regular") or {}
+    session_open = session.get("start") is not None and now.timestamp() < session.get("end", 0)
     values = []
     for stamp, value in zip(result.get("timestamp") or [], quote.get("close") or []):
         if value is None:
             continue
-        if before and dt.datetime.fromtimestamp(stamp, exchange_tz).date() >= before:
-            continue
+        if last_trade is not None and stamp > last_trade:
+            continue  # séance pas encore commencée
+        if session_open and stamp >= session["start"]:
+            continue  # séance en cours
         values.append(float(value))
     return values
 
@@ -131,15 +146,15 @@ def _pct(new: float, old: float | None) -> float | None:
     return round((new / old - 1) * 100, 2)
 
 
-def _quote(spec: dict[str, Any], today: dt.date) -> MarketQuote:
+def _quote(spec: dict[str, Any], now: dt.datetime) -> MarketQuote:
     symbol = spec["symbol"]
     ytd = _chart(symbol, "ytd")
     meta = ytd["meta"]
     price = float(meta["regularMarketPrice"])
-    closes = _closes(ytd, before=today)
+    closes = _closes(ytd, now)
     if spec.get("crypto"):
         # Marché continu : variation sur les 24 dernières heures.
-        hourly = _closes(_chart(symbol, "2d", "1h"))
+        hourly = _raw_closes(_chart(symbol, "2d", "1h"))
         day = _pct(price, hourly[-25] if len(hourly) >= 25 else (hourly[0] if hourly else None))
     else:
         day = _pct(closes[-1], closes[-2]) if len(closes) >= 2 else None
@@ -152,9 +167,9 @@ def _quote(spec: dict[str, Any], today: dt.date) -> MarketQuote:
     )
 
 
-def _session_move(symbol: str, name: str, today: dt.date) -> MarketMover | None:
+def _session_move(symbol: str, name: str, now: dt.datetime) -> MarketMover | None:
     result = _chart(symbol, "5d")
-    closes = _closes(result, before=today)
+    closes = _closes(result, now)
     if len(closes) < 2:
         return None
     return MarketMover(name=name, symbol=symbol, price=closes[-1],
@@ -162,10 +177,10 @@ def _session_move(symbol: str, name: str, today: dt.date) -> MarketMover | None:
 
 
 def _index_movers(title: str, members: dict[str, str], count: int,
-                  today: dt.date) -> MarketMovers:
+                  now: dt.datetime) -> MarketMovers:
     with ThreadPoolExecutor(max_workers=8) as pool:
         results = list(pool.map(
-            lambda item: _safe(_session_move, item[0], item[1], today), members.items()))
+            lambda item: _safe(_session_move, item[0], item[1], now), members.items()))
     moves = sorted((m for m in results if m), key=lambda m: m.change_pct, reverse=True)
     if len(moves) < len(members) // 2:
         raise RuntimeError(f"{title} : trop peu de cours reçus ({len(moves)}/{len(members)})")
@@ -223,7 +238,7 @@ def collect_markets(config: dict, now: dt.datetime) -> tuple[MarketsPage, DataSo
 
     specs = config.get("quotes") or DEFAULT_QUOTES
     with ThreadPoolExecutor(max_workers=8) as pool:
-        quotes = list(pool.map(lambda spec: _safe(_quote, spec, today), specs))
+        quotes = list(pool.map(lambda spec: _safe(_quote, spec, now), specs))
     page.quotes = [q for q in quotes if q]
     if len(page.quotes) < len(specs):
         missing = [s["symbol"] for s, q in zip(specs, quotes) if not q]
@@ -233,7 +248,7 @@ def collect_markets(config: dict, now: dt.datetime) -> tuple[MarketsPage, DataSo
     count = int(movers.get("count") or 5)
     if movers.get("cac40", True):
         members = movers.get("cac40_members") or CAC40
-        result = _safe(_index_movers, "CAC 40", members, count, today)
+        result = _safe(_index_movers, "CAC 40", members, count, now)
         if result:
             page.movers.append(result)
         else:

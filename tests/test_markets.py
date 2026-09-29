@@ -11,16 +11,19 @@ PARIS = ZoneInfo("Europe/Paris")
 NOW = dt.datetime(2026, 9, 29, 6, 50, tzinfo=PARIS)
 
 
-def _stamp(day: int, hour: int, tz: str) -> int:
-    return int(dt.datetime(2026, 9, day, hour, tzinfo=ZoneInfo(tz)).timestamp())
+def _stamp(day: int, hour: int, tz: str, minute: int = 0) -> int:
+    return int(dt.datetime(2026, 9, day, hour, minute, tzinfo=ZoneInfo(tz)).timestamp())
 
 
 def chart(closes, previous_close=100.0, price=None, tz="Europe/Paris"):
-    """Clôtures des 25 au 29/09 ; la dernière est la séance du jour, pas encore finie."""
+    """Barres des 25 au 29/09 vues le 29 à 6h50 : la dernière est la séance du jour,
+    créée avant l'ouverture ; la dernière cotation date de la clôture du 28."""
     days = [25, 26, 27, 28, 29][-len(closes):]
     return {"chart": {"result": [{
         "meta": {"regularMarketPrice": price or closes[-1], "chartPreviousClose": previous_close,
-                 "exchangeTimezoneName": tz},
+                 "exchangeTimezoneName": tz, "regularMarketTime": _stamp(28, 17, tz, 35),
+                 "currentTradingPeriod": {"regular": {"start": _stamp(29, 9, tz),
+                                                      "end": _stamp(29, 17, tz, 30)}}},
         "timestamp": [_stamp(day, 9, tz) for day in days],
         "indicators": {"quote": [{"close": closes}]},
     }]}}
@@ -50,7 +53,8 @@ def fake_json(url):
         ]
     symbol = url.split("/chart/")[1].split("?")[0]
     if "interval=1h" in url:  # crypto : 25 points horaires, le premier il y a 24 h
-        return chart([80.0] + [90.0] * 24, tz="UTC")
+        return {"chart": {"result": [{"meta": {}, "indicators": {
+            "quote": [{"close": [80.0] + [90.0] * 24}]}}]}}
     if symbol == "%5EFCHI":
         # 28/09 : 101 -> 102 (+0,99 %) ; la « séance » du 29 déjà créée doit être ignorée.
         return chart([100.0, 101.0, 102.0, 102.1], previous_close=110.0)
@@ -133,3 +137,13 @@ def test_speeches_are_labelled_in_french():
     assert markets._title_fr("ECB President Lagarde Speaks") == "Discours : présidente de la BCE Lagarde"
     assert markets._title_fr("Fed Chair Powell Speaks") == "Discours : président de la Fed Powell"
     assert markets._title_fr("Unknown Indicator") == "Unknown Indicator"
+
+
+def test_session_in_progress_is_ignored_but_a_closed_one_counts():
+    now = dt.datetime(2026, 9, 29, 11, 0, tzinfo=PARIS)
+    result = chart([100.0, 101.0, 102.0, 103.0])["chart"]["result"][0]
+    result["meta"]["regularMarketTime"] = _stamp(29, 10, "Europe/Paris", 59)
+    assert markets._closes(result, now) == [100.0, 101.0, 102.0]
+    evening = dt.datetime(2026, 9, 29, 18, 0, tzinfo=PARIS)
+    result["meta"]["regularMarketTime"] = _stamp(29, 17, "Europe/Paris", 35)
+    assert markets._closes(result, evening) == [100.0, 101.0, 102.0, 103.0]
