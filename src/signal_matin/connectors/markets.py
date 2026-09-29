@@ -86,6 +86,19 @@ _COUNTRIES = {"USD": "États-Unis", "EUR": "Zone euro", "GBP": "Royaume-Uni",
 _IMPACT = {"High": "Fort", "Medium": "Moyen", "Low": "Faible"}
 
 
+def _title_fr(title: str) -> str:
+    known = _MACRO_FR.get(title.casefold())
+    if known:
+        return known
+    if title.endswith(" Speaks"):
+        # « ECB President Lagarde Speaks » -> « Discours : ECB President Lagarde »
+        speaker = title[: -len(" Speaks")]
+        speaker = speaker.replace("ECB President", "présidente de la BCE").replace(
+            "Fed Chair", "président de la Fed")
+        return f"Discours : {speaker}"
+    return title
+
+
 def _json(url: str) -> dict[str, Any] | list[Any]:
     request = urllib.request.Request(url, headers=_HEADERS)
     with urllib.request.urlopen(request, timeout=15) as response:
@@ -195,7 +208,7 @@ def _macro(config: dict, today: dt.date, tz: ZoneInfo) -> list[MacroEvent]:
         events.append(MacroEvent(
             time="Journée" if all_day else f"{when.hour}h{when.minute:02d}",
             country=_COUNTRIES.get(item["country"], item["country"]),
-            title=_MACRO_FR.get(title.casefold(), title),
+            title=_title_fr(title),
             impact=_IMPACT.get(item.get("impact"), item.get("impact", "")),
             forecast=str(item.get("forecast") or ""), previous=str(item.get("previous") or ""),
         ))

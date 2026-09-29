@@ -127,3 +127,9 @@ def test_no_markets_without_data():
     edition = construire_demo(dt.date(2026, 9, 26)).model_copy(update={"markets": MarketsPage()})
     html = render_html(normaliser_edition(edition, mode="compact"))
     assert 'class="market-strip"' not in html and 'data-label="Marchés"' not in html
+
+
+def test_speeches_are_labelled_in_french():
+    assert markets._title_fr("ECB President Lagarde Speaks") == "Discours : présidente de la BCE Lagarde"
+    assert markets._title_fr("Fed Chair Powell Speaks") == "Discours : président de la Fed Powell"
+    assert markets._title_fr("Unknown Indicator") == "Unknown Indicator"
