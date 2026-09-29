@@ -13,7 +13,7 @@ from pathlib import Path
 
 from .models import (
     AgendaItem, DensityMode, DigestItem, MorningEdition, NewsItem,
-    MarketMovers, MarketQuote, Recommendation, SportEvent, SportTable, TaskItem,
+    LocalEvent, MarketMovers, MarketQuote, Recommendation, SportEvent, SportTable, TaskItem,
 )
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -167,6 +167,7 @@ def weather_block(edition: MorningEdition) -> str:
       <p>{_e(_truncate(weather.summary, 220))}</p>
       <p class="utility">{_e(range_text)}</p>
       {f'<p class="weather-advice">{_e(weather.advice)}</p>' if weather.advice else ''}
+      {ephemeris_line(edition)}
     </section>
     """
 
@@ -647,6 +648,81 @@ def _page_markets(edition: MorningEdition, number: int) -> str:
     body += ('<p class="market-disclaimer">Données publiques différées (Yahoo Finance, ForexFactory), '
              'à titre d’information : ceci n’est pas un conseil en investissement.</p>')
     return _page(edition, number, "Marchés", body, slug="markets")
+
+
+def _day_month(value: dt.date) -> str:
+    return f"{'1er' if value.day == 1 else value.day} {MONTHS[value.month - 1]}"
+
+
+def ephemeris_line(edition: MorningEdition) -> str:
+    ephemeris = edition.local.ephemeris
+    if ephemeris is None:
+        return ""
+    pieces = []
+    if ephemeris.names:
+        names = ephemeris.names[:3]
+        joined = ", ".join(names[:-1]) + (" et " if len(names) > 1 else "") + names[-1]
+        pieces.append(f"Bonne fête aux {joined}")
+    if ephemeris.sunrise and ephemeris.sunset:
+        pieces.append(f"Soleil {ephemeris.sunrise} – {ephemeris.sunset}")
+    if ephemeris.moon:
+        pieces.append(ephemeris.moon)
+    if not pieces:
+        return ""
+    return '<p class="ephemeris-line">' + " · ".join(_e(piece) for piece in pieces) + "</p>"
+
+
+def _event_when(event: LocalEvent) -> str:
+    if event.start is None:
+        return ""
+    if event.end and event.end != event.start:
+        return f"Jusqu’au {_day_month(event.end)}"
+    return f"{WEEKDAYS[event.start.weekday()]} {_day_month(event.start)}"
+
+
+def _page_local(edition: MorningEdition, number: int) -> str:
+    local = edition.local
+    date = edition.edition.date
+    body = section_header(local.title, "Actus du coin, éphéméride et sorties")
+    body += '<div class="local-grid"><div class="local-news">'
+    if local.news:
+        body += "".join(
+            f'<article class="news-card local-card"><p class="article-meta">{_source_line(item)}</p>'
+            f'<h3>{_e(_truncate(item.title, 150))}</h3>'
+            f'<p>{_e(_truncate(item.summary, 420))}</p>{why_line(item)}</article>'
+            for item in local.news
+        )
+    else:
+        body += '<p class="sport-empty">Pas d’actualité locale ce matin.</p>'
+    body += '</div><div class="local-side">'
+    ephemeris = local.ephemeris
+    if ephemeris:
+        body += '<section class="ephemeris-box"><h3>Éphéméride</h3>'
+        if ephemeris.saint:
+            body += (f'<p class="ephemeris-saint"><strong>{_e(ephemeris.saint)}</strong>'
+                     f'{f" — {_e(ephemeris.saint_note)}" if ephemeris.saint_note else ""}</p>')
+        for day in ephemeris.world_days[:2]:
+            body += f'<p class="ephemeris-day">{_e(day)}</p>'
+        if ephemeris.sunrise:
+            body += (f'<p class="ephemeris-sun">Soleil : {_e(ephemeris.sunrise)} – {_e(ephemeris.sunset)}'
+                     f'{f" ({_e(ephemeris.daylight)} de jour)" if ephemeris.daylight else ""}'
+                     f'{f" · {_e(ephemeris.moon)}" if ephemeris.moon else ""}</p>')
+        for label, entries in ((f"C’était un {_day_month(date)}", ephemeris.history),
+                               (f"Nés un {_day_month(date)}", ephemeris.births)):
+            if entries:
+                rows = "".join(f"<li><b>{entry.year}</b> {_e(_truncate(entry.text, 170))}</li>"
+                               for entry in entries[:3])
+                body += f"<h4>{label}</h4><ol>{rows}</ol>"
+        body += "</section>"
+    if local.events:
+        rows = "".join(
+            f"<li><time>{_e(_event_when(event))}</time><div><strong>{_e(_truncate(event.title, 90))}</strong>"
+            f"{f'<small>{_e(event.place)}</small>' if event.place else ''}</div></li>"
+            for event in local.events
+        )
+        body += f'<section class="local-events"><h3>Sorties du week-end</h3><ol>{rows}</ol></section>'
+    body += "</div></div>"
+    return _page(edition, number, local.title, body, slug="local")
 
 
 def _sport_rank(event: SportEvent) -> tuple[int, str]:
@@ -1212,11 +1288,15 @@ def render_html(edition: MorningEdition, css: str | None = None) -> str:
             has_more=part + 1 < len(detail_chunks),
         ))
         number += 1
+    has_local = not edition.local.is_empty()
     has_sport = not edition.sport.is_empty()
     has_markets = not edition.markets.is_empty()
     if mode == DensityMode.COMPACT:
         pages.append(_page_compact(edition, number, start=detail_count))
         number += 1
+        if has_local:
+            pages.append(_page_local(edition, number))
+            number += 1
         if has_sport:
             pages.append(_page_sport(edition, number))
             number += 1
@@ -1228,6 +1308,9 @@ def render_html(edition: MorningEdition, css: str | None = None) -> str:
         news_pages = _pages_news(edition, number, start=detail_count)
         pages.extend(news_pages)
         number += len(news_pages)
+        if has_local:
+            pages.append(_page_local(edition, number))
+            number += 1
         if has_sport:
             pages.append(_page_sport(edition, number))
             number += 1
@@ -1247,6 +1330,9 @@ def render_html(edition: MorningEdition, css: str | None = None) -> str:
         news_pages = _pages_news(edition, number, start=detail_count)
         pages.extend(news_pages)
         number += len(news_pages)
+        if has_local:
+            pages.append(_page_local(edition, number))
+            number += 1
         if has_sport:
             pages.append(_page_sport(edition, number))
             number += 1

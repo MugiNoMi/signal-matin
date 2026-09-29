@@ -585,3 +585,25 @@ footer { position: absolute; left: 11mm; right: 11mm; bottom: 6mm; display: flex
 .mail-list li strong { display: block; font: 700 6.6pt var(--sans); letter-spacing: .02em; }
 .mail-list.is-fyi li { font-size: 7.2pt; color: var(--muted); }
 .mail-block.is-front .mail-list li { font-size: 7.4pt; }
+
+/* Local : éphéméride et page « Près de chez toi » */
+.ephemeris-line { margin: 1.6mm 0 0; padding-top: 1.2mm; border-top: var(--hairline) solid var(--shade); font: 6.6pt/1.3 var(--sans); color: var(--muted); }
+.local-grid { display: grid; grid-template-columns: 1.35fr 1fr; gap: 6mm; }
+.local-news .local-card { padding-bottom: 2.4mm; margin-bottom: 2.4mm; border-bottom: var(--hairline) solid var(--shade); break-inside: avoid; }
+.local-news .local-card h3 { font-size: 12pt; }
+.local-news .local-card p { font-size: 8.2pt; line-height: 1.3; }
+.local-side { border-left: var(--hairline) solid var(--ink); padding-left: 5mm; }
+.ephemeris-box, .local-events { margin-bottom: 4mm; }
+.ephemeris-box h3, .local-events h3 { margin: 0 0 1.4mm; padding-bottom: .8mm; border-bottom: var(--rule) solid var(--ink); font: 700 7.2pt var(--sans); letter-spacing: .08em; text-transform: uppercase; }
+.ephemeris-box h4 { margin: 2mm 0 .8mm; font: italic 7pt var(--sans); color: var(--muted); }
+.ephemeris-box p { margin: 0 0 1mm; font-size: 8pt; line-height: 1.3; }
+.ephemeris-saint strong { font-family: var(--display); font-size: 11pt; }
+.ephemeris-day { font-style: italic; }
+.ephemeris-sun { font: 7pt var(--sans); color: var(--muted); }
+.ephemeris-box ol, .local-events ol { list-style: none; margin: 0; padding: 0; }
+.ephemeris-box li { padding: .8mm 0; border-bottom: var(--hairline) solid var(--shade); font-size: 7.8pt; line-height: 1.25; }
+.ephemeris-box li b { font-family: var(--sans); margin-right: 1mm; }
+.local-events li { display: grid; grid-template-columns: 22mm 1fr; gap: 2mm; padding: 1mm 0; border-bottom: var(--hairline) solid var(--shade); }
+.local-events time { font: 700 6.4pt/1.25 var(--sans); }
+.local-events strong { display: block; font-size: 8pt; line-height: 1.2; }
+.local-events small { display: block; color: var(--muted); font: 6.6pt var(--sans); }

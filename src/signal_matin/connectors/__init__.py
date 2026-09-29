@@ -4,6 +4,7 @@ from .calendar_ics import collect_ics
 from .gmail import collect_mail
 from .google_calendar import authorize_google, collect_google_calendar
 from .google_tasks import collect_google_tasks
+from .local import collect_ephemeris, collect_local_events, collect_local_news
 from .markets import collect_markets
 from .rss import collect_rss
 from .sport import collect_sport
@@ -11,7 +12,7 @@ from .tasks import collect_tasks
 from .weather import collect_weather
 
 __all__ = [
-    "authorize_google", "collect_google_calendar", "collect_google_tasks", "collect_ics",
-    "collect_mail",
+    "authorize_google", "collect_ephemeris", "collect_google_calendar", "collect_google_tasks",
+    "collect_ics", "collect_local_events", "collect_local_news", "collect_mail",
     "collect_markets", "collect_rss", "collect_sport", "collect_tasks", "collect_weather",
 ]

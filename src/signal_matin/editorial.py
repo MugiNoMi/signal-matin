@@ -40,7 +40,9 @@ important » qui donne l'enjeu ou ce que ça change concrètement.
 3. Une courte lecture de la veille tech et IA (3 à 4 phrases).
 4. Une courte lecture des marchés (3 à 4 phrases) : ce qui a bougé et les explications que les \
 dépêches permettent d'avancer.
-5. Le tri des mails non lus du lecteur, s'il y en a : une phrase de synthèse, puis les mails \
+5. Dans l'éphéméride, choisis les 3 faits historiques et les 3 naissances qui parleront le plus \
+à un lecteur français curieux (« ephemeris », par identifiants).
+6. Le tri des mails non lus du lecteur, s'il y en a : une phrase de synthèse, puis les mails \
 qui demandent vraiment une action de sa part (« to_handle », avec l'action attendue en une \
 phrase courte) et les autres mails utiles (« fyi », avec une note de quelques mots). Ignore \
 publicités, newsletters et notifications automatiques sans intérêt.
@@ -80,6 +82,15 @@ SCHEMA: dict[str, Any] = {
         },
         "tech_insight": {"type": "string"},
         "markets_insight": {"type": "string"},
+        "ephemeris": {
+            "type": "object",
+            "properties": {
+                "history": {"type": "array", "items": {"type": "string"}},
+                "births": {"type": "array", "items": {"type": "string"}},
+            },
+            "required": ["history", "births"],
+            "additionalProperties": False,
+        },
         "mail": {
             "type": "object",
             "properties": {
@@ -99,7 +110,7 @@ SCHEMA: dict[str, Any] = {
             "additionalProperties": False,
         },
     },
-    "required": ["editorial", "items", "tech_insight", "markets_insight", "mail"],
+    "required": ["editorial", "items", "tech_insight", "markets_insight", "ephemeris", "mail"],
     "additionalProperties": False,
 }
 
@@ -113,7 +124,40 @@ def _articles(edition: MorningEdition) -> dict[str, NewsItem]:
         articles[f"n{index}"] = item
     for index, item in enumerate(edition.tech_news, 1):
         articles[f"t{index}"] = item
+    for index, item in enumerate(edition.local.news, 1):
+        articles[f"l{index}"] = item
     return articles
+
+
+def _ephemeris_payload(edition: MorningEdition) -> dict[str, Any]:
+    ephemeris = edition.local.ephemeris
+    if ephemeris is None:
+        return {"faits": [], "naissances": []}
+    return {
+        "faits": [{"id": f"h{i}", "annee": e.year, "texte": e.text}
+                  for i, e in enumerate(ephemeris.history)],
+        "naissances": [{"id": f"b{i}", "annee": e.year, "texte": e.text}
+                       for i, e in enumerate(ephemeris.births)],
+    }
+
+
+def _pick_ephemeris(edition: MorningEdition, result: dict[str, Any]) -> MorningEdition:
+    ephemeris = edition.local.ephemeris
+    picks = result.get("ephemeris") or {}
+    if ephemeris is None:
+        return edition
+
+    def choose(entries: list, prefix: str, ids: list) -> list:
+        by_id = {f"{prefix}{i}": entry for i, entry in enumerate(entries)}
+        chosen = [by_id[key] for key in ids if key in by_id][:3]
+        return sorted(chosen, key=lambda entry: entry.year) or entries
+
+    chosen = ephemeris.model_copy(update={
+        "history": choose(ephemeris.history, "h", picks.get("history") or []),
+        "births": choose(ephemeris.births, "b", picks.get("births") or []),
+    })
+    return edition.model_copy(update={"local": edition.local.model_copy(
+        update={"ephemeris": chosen})})
 
 
 def _payload(edition: MorningEdition, articles: dict[str, NewsItem],
@@ -135,6 +179,7 @@ def _payload(edition: MorningEdition, articles: dict[str, NewsItem],
                          for m in markets.movers],
             "agenda": [f"{e.time} {e.country} : {e.title}" for e in markets.agenda],
         },
+        "ephemeride": _ephemeris_payload(edition),
         "mails": [
             {"id": key, "de": mail.item.sender, "objet": mail.item.subject,
              "recu": mail.item.received.isoformat() if mail.item.received else None,
@@ -189,6 +234,7 @@ def _apply(edition: MorningEdition, articles: dict[str, NewsItem], result: dict[
            for group in ("world", "france", "economy", "society", "science", "culture")},
     })
     tech_news = [swap(item) for item in edition.tech_news]
+    local = edition.local.model_copy(update={"news": [swap(item) for item in edition.local.news]})
     # Le résumé « IA & tech » des pages courtes reprend les textes réécrits.
     by_title = {item.title: item for item in tech_news}
     tech = [digest.model_copy(update={"summary": by_title[digest.title].summary})
@@ -203,7 +249,7 @@ def _apply(edition: MorningEdition, articles: dict[str, NewsItem], result: dict[
         author=author,
     )
     return edition.model_copy(update={
-        "news": news, "tech_news": tech_news, "tech": tech, "editorial": block,
+        "news": news, "tech_news": tech_news, "tech": tech, "editorial": block, "local": local,
     })
 
 
@@ -264,7 +310,7 @@ def rediger_avec_claude(edition: MorningEdition, config: dict, client: Any = Non
     except json.JSONDecodeError:
         return edition, _status(DataState.UNAVAILABLE, "Réponse de Claude illisible.")
     served_by = getattr(response, "model", model) or model
-    updated = _apply(edition, articles, result, author=served_by)
+    updated = _pick_ephemeris(_apply(edition, articles, result, author=served_by), result)
     if mail_ids:
         unread = edition.mail.unread or len(mail_ids)
         updated = updated.model_copy(update={"mail": _mail_digest(mail_ids, result, unread)})

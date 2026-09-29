@@ -5,6 +5,7 @@ import datetime as dt
 
 from .models import (
     AgendaItem, DataSourceStatus, DataState, DensityMode, DigestItem, EditionMeta, EditorialBlock,
+    Ephemeris, EphemerisEntry, LocalEvent, LocalPage,
     Extras, Illustration, Importance, MorningEdition, NewsBundle, NewsItem,
     MacroEvent, MailDigest, MailItem, MarketMover, MarketMovers, MarketQuote, MarketsPage,
     PersonalBlock, QuizBlock, QuoteBlock, Recommendation, SourceRef, SportEvent,
@@ -233,6 +234,18 @@ def construire_demo(date: dt.date | None = None) -> MorningEdition:
         learning=construire_apprentissage_du_jour(date),
         sport=_sport_demo(date, at),
         markets=_markets_demo(),
+        local=LocalPage(
+            news=[_news(date, "Le marché du samedi s'installe place de la mairie", "Local",
+                        "Article local fictif pour montrer la page des actus du coin.")],
+            events=[LocalEvent(title="DEMO - Concert à l'abbaye", start=date, place="Ville fictive")],
+            ephemeris=Ephemeris(
+                saint="DEMO - Saint du jour", saint_note="Présentation courte du saint.",
+                names=["Prénom A", "Prénom B"], sunrise="7h40", sunset="19h20",
+                daylight="11 h 40", moon="Premier quartier",
+                history=[EphemerisEntry(year=1900, text="DEMO - Un fait historique marquant.")],
+                births=[EphemerisEntry(year=1920, text="DEMO - Une personnalité connue.")],
+            ),
+        ),
         mail=MailDigest(
             unread=6,
             summary="DEMO - Deux mails demandent une réponse, le reste peut attendre.",

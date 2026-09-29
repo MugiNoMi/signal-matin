@@ -282,6 +282,43 @@ class MailDigest(Modele):
         return not (self.to_handle or self.fyi or self.summary)
 
 
+class EphemerisEntry(Modele):
+    year: int
+    text: str = Field(min_length=1, max_length=300)
+
+
+class Ephemeris(Modele):
+    saint: str = Field(default="", max_length=120)
+    saint_note: str = Field(default="", max_length=200)
+    names: list[str] = Field(default_factory=list, max_length=6)
+    world_days: list[str] = Field(default_factory=list, max_length=4)
+    history: list[EphemerisEntry] = Field(default_factory=list, max_length=12)
+    births: list[EphemerisEntry] = Field(default_factory=list, max_length=60)
+    sunrise: str = Field(default="", max_length=10)
+    sunset: str = Field(default="", max_length=10)
+    daylight: str = Field(default="", max_length=12)
+    moon: str = Field(default="", max_length=40)
+
+
+class LocalEvent(Modele):
+    title: str = Field(min_length=1, max_length=160)
+    start: dt.date | None = None
+    end: dt.date | None = None
+    place: str = Field(default="", max_length=80)
+    category: str = Field(default="", max_length=60)
+    url: str | None = Field(default=None, max_length=500)
+
+
+class LocalPage(Modele):
+    title: str = Field(default="Près de chez toi", max_length=80)
+    news: list[NewsItem] = Field(default_factory=list, max_length=10)
+    events: list[LocalEvent] = Field(default_factory=list, max_length=12)
+    ephemeris: Ephemeris | None = None
+
+    def is_empty(self) -> bool:
+        return not (self.news or self.events or self.ephemeris)
+
+
 class EditorialBlock(Modele):
     """Textes rédigés par une IA à partir des seules sources de l'édition."""
     title: str = Field(min_length=1, max_length=140)
@@ -302,7 +339,7 @@ class MorningEdition(Modele):
     generated_at: dt.datetime
     demo: bool = False
     edition: EditionMeta
-    sources: list[DataSourceStatus] = Field(default_factory=list, max_length=16)
+    sources: list[DataSourceStatus] = Field(default_factory=list, max_length=24)
     weather: WeatherBlock | None = None
     agenda: list[AgendaItem] = Field(default_factory=list, max_length=24)
     priorities: list[TaskItem] = Field(default_factory=list, max_length=12)
@@ -323,6 +360,7 @@ class MorningEdition(Modele):
     markets: MarketsPage = Field(default_factory=MarketsPage)
     editorial: EditorialBlock | None = None
     mail: MailDigest = Field(default_factory=MailDigest)
+    local: LocalPage = Field(default_factory=LocalPage)
 
     @field_validator("generated_at")
     @classmethod

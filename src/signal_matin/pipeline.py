@@ -6,14 +6,15 @@ from pathlib import Path
 
 from .config import ROOT, setting
 from .connectors import (
-    collect_google_calendar, collect_google_tasks, collect_ics, collect_mail, collect_markets,
-    collect_rss, collect_sport, collect_tasks, collect_weather,
+    collect_ephemeris, collect_google_calendar, collect_google_tasks, collect_ics,
+    collect_local_events, collect_local_news, collect_mail, collect_markets, collect_rss,
+    collect_sport, collect_tasks, collect_weather,
 )
 from .daily_learning import construire_apprentissage_du_jour
 from .editorial import rediger_avec_claude
 from .models import (
     DataSourceStatus, DataState, DigestItem, EditionMeta, Extras, Importance,
-    LearningPage, MailDigest, MarketsPage, MorningEdition, NewsBundle, NewsItem,
+    LearningPage, LocalPage, MailDigest, MarketsPage, MorningEdition, NewsBundle, NewsItem,
     PersonalBlock, QuoteBlock, Recommendation, SourceRef, SportPage,
 )
 from .normalizer import normaliser_edition
@@ -133,6 +134,21 @@ def build_live(
         markets, markets_status = MarketsPage(), _disabled("Marches")
     statuses.append(markets_status)
 
+    local = LocalPage()
+    if _enabled(config, "local", False):
+        local_config = setting(config, "local", {}) or {}
+        ephemeris, ephemeris_status = collect_ephemeris(
+            local_config, now, setting(config, "weather.latitude"),
+            setting(config, "weather.longitude"))
+        local_news, local_news_status = collect_local_news(local_config, now)
+        events, events_status = collect_local_events(local_config.get("events") or {}, now)
+        local = LocalPage(
+            title=str(local_config.get("title") or "Près de chez toi"),
+            news=local_news, events=events,
+            ephemeris=ephemeris,
+        )
+        statuses.extend([ephemeris_status, local_news_status, events_status])
+
     mails = []
     mail_digest = MailDigest()
     if _enabled(config, "mail", False):
@@ -179,6 +195,7 @@ def build_live(
         sport=sport,
         markets=markets,
         mail=mail_digest,
+        local=local,
         recommendations=recommendations,
         personal=PersonalBlock(
             greeting=str(setting(config, "personal.greeting", "Bonjour.") or "Bonjour."),
@@ -195,4 +212,18 @@ def build_live(
         edition, ai_status = rediger_avec_claude(
             edition, setting(config, "ai", {}) or {}, mails=mails)
         edition = edition.model_copy(update={"sources": [*edition.sources, ai_status]})
-    return normaliser_edition(edition, mode=mode)
+    return normaliser_edition(_trim_ephemeris(edition, now), mode=mode)
+
+
+def _trim_ephemeris(edition: MorningEdition, now: dt.datetime) -> MorningEdition:
+    """Garde trois faits et trois naissances si l'IA n'a pas déjà choisi."""
+    ephemeris = edition.local.ephemeris
+    if ephemeris is None or (len(ephemeris.history) <= 3 and len(ephemeris.births) <= 3):
+        return edition
+    trimmed = ephemeris.model_copy(update={
+        "history": ephemeris.history[:3],
+        # Sans tri éditorial, des naissances anciennes : plus souvent des noms connus.
+        "births": [b for b in ephemeris.births if b.year < now.year - 40][:3],
+    })
+    return edition.model_copy(update={"local": edition.local.model_copy(
+        update={"ephemeris": trimmed})})

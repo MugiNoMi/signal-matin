@@ -21,6 +21,7 @@ modules:
   markets: false          # bandeau des cours en une + page Marchés
   ai: false               # édito et résumés rédigés par Claude (clé ANTHROPIC_API_KEY)
   mail: false             # mails non lus (IMAP, lecture seule), triés par Claude si ai est actif
+  local: false            # éphéméride en une + page actus locales et sorties
 
 weather:
   location: ""
@@ -99,6 +100,21 @@ markets:
     enabled: true
     countries: ["USD", "EUR"]
     impact: ["High", "Medium"]
+
+# Local : saint du jour (Nominis), « ce jour-là » (Wikipédia), soleil (coordonnées
+# de la météo), actus RSS filtrées sur des communes (les premières passent en tête),
+# sorties du week-end depuis une page d'agenda d'office de tourisme (iris-etourism).
+local:
+  title: "Près de chez toi"
+  feeds: []
+  # - {name: "Le JSL", category: "Local", url: "https://www.lejsl.com/edition-macon/rss"}
+  places: []                # ex. ["Cluny", "Cormatin", "Mâcon"]
+  limit: 6
+  max_age_hours: 36
+  events:
+    url: ""                 # ex. https://www.cluny-tourisme.com/agenda/tout-lagenda/recherche/period/weekend/
+    weekdays: [4, 5]        # vendredi et samedi
+    limit: 8
 
 # Mails non lus des dernières 24 h, en lecture seule (rien n'est marqué comme lu).
 # Avec Gmail, le mot de passe d'application de l'envoi suffit. Si le module ai est
