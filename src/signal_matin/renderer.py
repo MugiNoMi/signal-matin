@@ -13,7 +13,7 @@ from pathlib import Path
 
 from .models import (
     AgendaItem, DensityMode, DigestItem, MorningEdition, NewsItem,
-    Recommendation, SportEvent, SportTable, TaskItem,
+    MarketMovers, MarketQuote, Recommendation, SportEvent, SportTable, TaskItem,
 )
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -513,6 +513,84 @@ def notes_space(tall: bool = False) -> str:
     )
 
 
+def _signed(value: float | None) -> str:
+    if value is None:
+        return "–"
+    return f"{value:+.2f} %".replace(".", ",").replace("-", "−")
+
+
+def _number(value: float, decimals: int = 2) -> str:
+    return f"{value:,.{decimals}f}".replace(",", " ").replace(".", ",")
+
+
+def _arrow(value: float | None) -> str:
+    if value is None:
+        return ""
+    return "▲" if value > 0 else "▼" if value < 0 else "■"
+
+
+def _unit(quote: MarketQuote) -> str:
+    return f"\u202f{quote.unit}" if quote.unit else ""
+
+
+def market_strip(edition: MorningEdition) -> str:
+    quotes = edition.markets.quotes
+    if not quotes:
+        return ""
+    cells = "".join(
+        f'<span><b>{_e(q.name)}</b> {_e(_number(q.price, q.decimals))}{_e(_unit(q))} '
+        f'<i>{_arrow(q.change_pct)} {_e(_signed(q.change_pct))}</i></span>'
+        for q in quotes[:8]
+    )
+    return f'<div class="market-strip">{cells}</div>'
+
+
+def _quote_row(q: MarketQuote) -> str:
+    label = f"{_e(q.name)}{' <small>24 h</small>' if q.crypto else ''}"
+    return (f"<tr><td>{label}</td><td>{_e(_number(q.price, q.decimals))}{_e(_unit(q))}</td>"
+            f"<td>{_arrow(q.change_pct)} {_e(_signed(q.change_pct))}</td>"
+            f"<td>{_e(_signed(q.ytd_pct))}</td></tr>")
+
+
+def _movers_block(movers: MarketMovers) -> str:
+    def column(title: str, items) -> str:
+        rows = "".join(
+            f"<li><span>{_e(_truncate(m.name, 34))}</span><b>{_e(_signed(m.change_pct))}</b></li>"
+            for m in items
+        ) or "<li><span>Aucune</span></li>"
+        return f"<div><h4>{title}</h4><ol>{rows}</ol></div>"
+    return (f'<section class="market-movers"><h3>{_e(movers.title)} : la séance de la veille</h3>'
+            f'<div class="market-movers-grid">{column("Plus fortes hausses", movers.gainers)}'
+            f'{column("Plus fortes baisses", movers.losers)}</div></section>')
+
+
+def _page_markets(edition: MorningEdition, number: int) -> str:
+    markets = edition.markets
+    body = section_header("Marchés", "Clôtures de la veille, crypto sur 24 h")
+    if markets.quotes:
+        rows = "".join(_quote_row(q) for q in markets.quotes)
+        body += ('<section class="market-quotes"><table class="sport-table market-table">'
+                 "<thead><tr><th>Actif</th><th>Cours</th><th>Veille</th><th>Depuis le 1er janv.</th>"
+                 f"</tr></thead><tbody>{rows}</tbody></table></section>")
+    for movers in markets.movers:
+        body += _movers_block(movers)
+    if markets.agenda:
+        items = "".join(
+            f"<li><time>{_e(e.time)}</time><div><strong>{_e(e.title)}</strong>"
+            f"<small>{_e(e.country)} · impact {_e(e.impact.lower())}"
+            f"{f' · prévu {_e(e.forecast)}' if e.forecast else ''}"
+            f"{f' · précédent {_e(e.previous)}' if e.previous else ''}</small></div></li>"
+            for e in markets.agenda
+        )
+        body += f'<section class="market-agenda"><h3>Agenda macro du jour</h3><ol>{items}</ol></section>'
+    else:
+        body += ('<section class="market-agenda"><h3>Agenda macro du jour</h3>'
+                 '<p class="sport-empty">Aucune annonce majeure prévue aujourd’hui.</p></section>')
+    body += ('<p class="market-disclaimer">Données publiques différées (Yahoo Finance, ForexFactory), '
+             'à titre d’information : ceci n’est pas un conseil en investissement.</p>')
+    return _page(edition, number, "Marchés", body, slug="markets")
+
+
 def _sport_rank(event: SportEvent) -> tuple[int, str]:
     order = {"basketball": 0, "football": 1, "tennis": 2}
     return (0 if event.highlight else 1 + order.get(event.sport, 3), event.when)
@@ -577,7 +655,7 @@ def _page_sport(edition: MorningEdition, number: int) -> str:
         )
         body += f'<section class="sport-group"><h3>{_e(competition)}</h3><ol>{items}</ol></section>'
     if not sport.today:
-        body += '<p class="sport-empty">Aucun match suivi aujourd hui.</p>'
+        body += '<p class="sport-empty">Aucun match suivi aujourd’hui.</p>'
     if sport.recaps:
         # Chaque résumé est un bloc direct de la page : la pagination peut
         # ainsi répartir une longue nuit de NBA sur plusieurs pages.
@@ -633,6 +711,7 @@ def _page_one(edition: MorningEdition) -> str:
     tail = front_footer_band(edition)
     return _page(
         edition, 1, "Le briefing",
+        f'{market_strip(edition)}'
         f'<div class="briefing-grid"><div>{left}</div><div>{right}</div></div>{tail}',
         first=True, slug="front",
     )
@@ -1059,11 +1138,15 @@ def render_html(edition: MorningEdition, css: str | None = None) -> str:
         ))
         number += 1
     has_sport = not edition.sport.is_empty()
+    has_markets = not edition.markets.is_empty()
     if mode == DensityMode.COMPACT:
         pages.append(_page_compact(edition, number, start=detail_count))
         number += 1
         if has_sport:
             pages.append(_page_sport(edition, number))
+            number += 1
+        if has_markets:
+            pages.append(_page_markets(edition, number))
             number += 1
         pages.append(_page_learning(edition, number))
     elif mode == DensityMode.STANDARD:
@@ -1072,6 +1155,9 @@ def render_html(edition: MorningEdition, css: str | None = None) -> str:
         number += len(news_pages)
         if has_sport:
             pages.append(_page_sport(edition, number))
+            number += 1
+        if has_markets:
+            pages.append(_page_markets(edition, number))
             number += 1
         tech_pages = _pages_tech(edition, number)
         pages.extend(tech_pages)
@@ -1088,6 +1174,9 @@ def render_html(edition: MorningEdition, css: str | None = None) -> str:
         number += len(news_pages)
         if has_sport:
             pages.append(_page_sport(edition, number))
+            number += 1
+        if has_markets:
+            pages.append(_page_markets(edition, number))
             number += 1
         pages.append(_page_day(edition, number))
         number += 1

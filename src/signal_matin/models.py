@@ -221,6 +221,48 @@ class SportPage(Modele):
         return not (self.today or self.recaps or self.tables or self.notes)
 
 
+class MarketQuote(Modele):
+    name: str = Field(min_length=1, max_length=60)
+    symbol: str = Field(min_length=1, max_length=24)
+    price: float
+    unit: str = Field(default="", max_length=4)
+    decimals: int = Field(default=2, ge=0, le=6)
+    change_pct: float | None = None
+    ytd_pct: float | None = None
+    crypto: bool = False
+
+
+class MarketMover(Modele):
+    name: str = Field(min_length=1, max_length=80)
+    symbol: str = Field(min_length=1, max_length=24)
+    price: float
+    change_pct: float
+
+
+class MarketMovers(Modele):
+    title: str = Field(min_length=1, max_length=60)
+    gainers: list[MarketMover] = Field(default_factory=list, max_length=10)
+    losers: list[MarketMover] = Field(default_factory=list, max_length=10)
+
+
+class MacroEvent(Modele):
+    time: str = Field(min_length=1, max_length=12)
+    country: str = Field(default="", max_length=40)
+    title: str = Field(min_length=1, max_length=160)
+    impact: str = Field(default="", max_length=20)
+    forecast: str = Field(default="", max_length=30)
+    previous: str = Field(default="", max_length=30)
+
+
+class MarketsPage(Modele):
+    quotes: list[MarketQuote] = Field(default_factory=list, max_length=16)
+    movers: list[MarketMovers] = Field(default_factory=list, max_length=4)
+    agenda: list[MacroEvent] = Field(default_factory=list, max_length=12)
+
+    def is_empty(self) -> bool:
+        return not (self.quotes or self.movers or self.agenda)
+
+
 class PersonalBlock(Modele):
     greeting: str = Field(default="Bonjour.", max_length=160)
     note: str = Field(default="", max_length=600)
@@ -250,6 +292,7 @@ class MorningEdition(Modele):
     extras: Extras = Field(default_factory=Extras)
     learning: LearningPage = Field(default_factory=LearningPage)
     sport: SportPage = Field(default_factory=SportPage)
+    markets: MarketsPage = Field(default_factory=MarketsPage)
 
     @field_validator("generated_at")
     @classmethod

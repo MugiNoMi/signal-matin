@@ -18,6 +18,7 @@ modules:
   tech_vocabulary: true
   recommendations: true
   sport: false            # page Sport + encadré « A suivre » en une
+  markets: false          # bandeau des cours en une + page Marchés
 
 weather:
   location: ""
@@ -69,6 +70,24 @@ sport:
     team_timezone: "America/Chicago"
     recap_all_games: false        # true : résumé de tous les matchs de la nuit
     standings_weekday: 6          # 0 = lundi ... 6 = dimanche
+
+# Marchés (Yahoo Finance + agenda ForexFactory, sans clé, données différées).
+markets:
+  timezone: "Europe/Paris"
+  # quotes: remplace la liste par défaut (CAC 40, S&P 500, EUR/USD, or, Brent,
+  # Bitcoin, Ethereum, BNB). Symboles Yahoo Finance.
+  # quotes:
+  #   - {symbol: "^FCHI", name: "CAC 40"}
+  #   - {symbol: "EURUSD=X", name: "EUR/USD", decimals: 4}
+  #   - {symbol: "BTC-USD", name: "Bitcoin", unit: "$", crypto: true}
+  movers:
+    cac40: true             # hausses/baisses de la veille parmi les valeurs du CAC 40
+    us: true                # palmarès américain de Yahoo Finance
+    count: 5
+  macro:
+    enabled: true
+    countries: ["USD", "EUR"]
+    impact: ["High", "Medium"]
 
 recommendations: []
 personal:

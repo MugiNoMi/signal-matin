@@ -11,9 +11,9 @@ from signal_matin.renderer import render_html
 
 
 EXPECTED_PAGES = {
-    DensityMode.COMPACT: 5,
-    DensityMode.STANDARD: 8,
-    DensityMode.EXTENDED: 8,
+    DensityMode.COMPACT: 6,
+    DensityMode.STANDARD: 9,
+    DensityMode.EXTENDED: 9,
 }
 
 
@@ -92,7 +92,7 @@ def test_extra_news_tech_and_curiosity_create_pages_without_omission():
         "curiosity_news": curiosity_items,
     })
     html = render_html(edition)
-    assert html.count('class="sheet ') == 11
+    assert html.count('class="sheet ') == 12
     for item in [*news_items, *tech_items, *curiosity_items]:
         assert item.title in html
     assert "tech-continuation is-four" in html

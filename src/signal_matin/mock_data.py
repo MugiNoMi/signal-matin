@@ -6,6 +6,7 @@ import datetime as dt
 from .models import (
     AgendaItem, DataSourceStatus, DataState, DensityMode, DigestItem, EditionMeta,
     Extras, Illustration, Importance, MorningEdition, NewsBundle, NewsItem,
+    MacroEvent, MarketMover, MarketMovers, MarketQuote, MarketsPage,
     PersonalBlock, QuizBlock, QuoteBlock, Recommendation, SourceRef, SportEvent,
     SportPage, SportRecap, SportTable, TaskItem, WeatherBlock, WordOfTheDay,
 )
@@ -67,6 +68,28 @@ def _sport_demo(date: dt.date, at) -> SportPage:
                   ["3", "Troisieme equipe", "9", "8", ".529"]],
         )],
         notes=["DEMO - Equipe suivie : bilan 12-5, 1er de la division"],
+    )
+
+
+def _markets_demo() -> MarketsPage:
+    def mover(name: str, change: float) -> MarketMover:
+        return MarketMover(name=f"DEMO - {name}", symbol="DEMO", price=100.0, change_pct=change)
+
+    return MarketsPage(
+        quotes=[
+            MarketQuote(name="Indice A", symbol="DEMO-A", price=8000.0, change_pct=0.42, ytd_pct=3.1),
+            MarketQuote(name="EUR/USD", symbol="DEMO-FX", price=1.1, decimals=4, change_pct=-0.12),
+            MarketQuote(name="Or", symbol="DEMO-OR", price=4000.0, unit="$", change_pct=0.3),
+            MarketQuote(name="Crypto A", symbol="DEMO-C", price=80000.0, unit="$",
+                        change_pct=-1.8, ytd_pct=-5.0, crypto=True),
+        ],
+        movers=[MarketMovers(
+            title="Indice de démonstration",
+            gainers=[mover("Valeur A", 3.2), mover("Valeur B", 1.4)],
+            losers=[mover("Valeur C", -2.1), mover("Valeur D", -0.8)],
+        )],
+        agenda=[MacroEvent(time="14h30", country="États-Unis", title="DEMO - Inflation sur un mois",
+                           impact="Fort", forecast="0.3%", previous="0.2%")],
     )
 
 
@@ -207,5 +230,6 @@ def construire_demo(date: dt.date | None = None) -> MorningEdition:
         ),
         learning=construire_apprentissage_du_jour(date),
         sport=_sport_demo(date, at),
+        markets=_markets_demo(),
     )
     return edition

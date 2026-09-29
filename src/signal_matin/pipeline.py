@@ -6,14 +6,15 @@ from pathlib import Path
 
 from .config import ROOT, setting
 from .connectors import (
-    collect_google_calendar, collect_ics, collect_rss, collect_sport, collect_tasks,
+    collect_google_calendar, collect_ics, collect_markets, collect_rss, collect_sport,
+    collect_tasks,
     collect_weather,
 )
 from .daily_learning import construire_apprentissage_du_jour
 from .models import (
     DataSourceStatus, DataState, DigestItem, EditionMeta, Extras, Importance,
-    LearningPage, MorningEdition, NewsBundle, NewsItem, PersonalBlock, QuoteBlock,
-    Recommendation, SourceRef, SportPage,
+    LearningPage, MarketsPage, MorningEdition, NewsBundle, NewsItem, PersonalBlock,
+    QuoteBlock, Recommendation, SourceRef, SportPage,
 )
 from .normalizer import normaliser_edition
 
@@ -120,6 +121,12 @@ def build_live(
         sport, sport_status = SportPage(), _disabled("Sport")
     statuses.append(sport_status)
 
+    if _enabled(config, "markets", False):
+        markets, markets_status = collect_markets(setting(config, "markets", {}) or {}, now)
+    else:
+        markets, markets_status = MarketsPage(), _disabled("Marches")
+    statuses.append(markets_status)
+
     tech_digest = [DigestItem(
         title=item.title, summary=item.summary, source=item.source,
         importance=item.importance,
@@ -156,6 +163,7 @@ def build_live(
         tech=tech_digest, tech_news=tech_news,
         curiosity_news=curiosities,
         sport=sport,
+        markets=markets,
         recommendations=recommendations,
         personal=PersonalBlock(
             greeting=str(setting(config, "personal.greeting", "Bonjour.") or "Bonjour."),

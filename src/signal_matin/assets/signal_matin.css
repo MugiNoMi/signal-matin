@@ -538,3 +538,27 @@ footer { position: absolute; left: 11mm; right: 11mm; bottom: 6mm; display: flex
 .sport-table td:nth-child(n+3), .sport-table th:nth-child(n+3) { text-align: right; }
 .sport-table tr.is-highlight td { font-weight: 700; background: var(--wash); }
 .sport-table-note { margin: 1mm 0 0; color: var(--muted); font: italic 6.5pt var(--sans); }
+
+/* Marchés : bandeau de une et page dédiée */
+.market-strip { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .6mm 3mm; margin: -1mm 0 2.6mm; padding: 1mm 0 1.2mm; border-bottom: var(--hairline) solid var(--ink); font: 6.4pt/1.2 var(--sans); white-space: nowrap; }
+.market-strip b { font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.market-strip i { font-style: normal; font-weight: 700; }
+.market-quotes { margin-bottom: 4mm; }
+.market-table td:first-child, .market-table th:first-child { width: auto; text-align: left; font-weight: 700; }
+.market-table td { font-size: 8pt; padding: 1mm; }
+.market-table td:nth-child(2), .market-table th:nth-child(2) { text-align: right; }
+.market-table small { font-weight: 400; color: var(--muted); }
+.market-movers { margin-bottom: 4mm; break-inside: avoid; }
+.market-movers h3, .market-agenda h3 { margin: 0 0 1.4mm; padding-bottom: .8mm; border-bottom: var(--rule) solid var(--ink); font: 700 7.2pt var(--sans); letter-spacing: .08em; text-transform: uppercase; }
+.market-movers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
+.market-movers h4 { margin: 0 0 .8mm; font: italic 7pt var(--sans); color: var(--muted); }
+.market-movers ol { list-style: none; margin: 0; padding: 0; }
+.market-movers li { display: flex; justify-content: space-between; gap: 2mm; padding: .9mm 0; border-bottom: var(--hairline) solid var(--shade); font-size: 8pt; }
+.market-movers li b { font: 700 7.6pt var(--sans); }
+.market-agenda { margin-bottom: 4mm; }
+.market-agenda ol { list-style: none; margin: 0; padding: 0; }
+.market-agenda li { display: grid; grid-template-columns: 14mm 1fr; gap: 2mm; padding: 1.2mm 0; border-bottom: var(--hairline) solid var(--shade); }
+.market-agenda time { font: 700 6.6pt var(--sans); }
+.market-agenda strong { display: block; font-size: 8.6pt; line-height: 1.15; }
+.market-agenda small { display: block; margin-top: .4mm; color: var(--muted); font: 6.6pt/1.2 var(--sans); }
+.market-disclaimer { margin: 0; color: var(--muted); font: italic 6.2pt var(--sans); }
