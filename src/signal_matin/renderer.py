@@ -342,6 +342,19 @@ def detailed_brief(item: NewsItem, *, featured: bool = False) -> str:
     """
 
 
+def long_read(item: NewsItem) -> str:
+    text = item.expanded_summary or item.summary
+    paragraphs = "".join(f"<p>{_e(paragraph)}</p>" for paragraph in text.split("\n\n")
+                         if paragraph.strip())
+    return f"""
+    <article class="long-read">
+      <p class="article-meta">{_source_line(item)}</p>
+      <h3>{_e(_truncate(item.title, 190))}</h3>
+      <div class="long-read-body">{paragraphs}{why_line(item)}</div>
+    </article>
+    """
+
+
 def dossier_story(
     item: NewsItem, *, featured: bool = False, max_chars: int | None = None,
 ) -> str:
@@ -872,7 +885,10 @@ def _page_briefs_detail(
         return ""
     eyebrow = "Les sujets annonces en une" if part == 1 else "La suite du cahier d actualites"
     body = section_header("En bref, en detail", eyebrow)
-    if len(items) > BRIEF_DETAIL_PAGE_LIMIT:
+    if edition.editorial and any(item.expanded_summary for item in items):
+        # Articles développés par l'IA : pleine largeur, texte sur trois colonnes.
+        body += "".join(long_read(item) for item in items)
+    elif len(items) > BRIEF_DETAIL_PAGE_LIMIT:
         short_page = sum(map(_story_weight, items)) < 3600
         body += f'<div class="briefs-detail-grid{" is-short" if short_page else ""}">'
         body += "".join(detailed_brief(item) for item in items)

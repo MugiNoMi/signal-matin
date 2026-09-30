@@ -607,3 +607,12 @@ footer { position: absolute; left: 11mm; right: 11mm; bottom: 6mm; display: flex
 .local-events time { font: 700 6.4pt/1.25 var(--sans); }
 .local-events strong { display: block; font-size: 8pt; line-height: 1.2; }
 .local-events small { display: block; color: var(--muted); font: 6.6pt var(--sans); }
+
+/* Articles développés : pleine largeur, texte en colonnes */
+.long-read { padding-bottom: 3mm; margin-bottom: 3mm; border-bottom: var(--hairline) solid var(--ink); break-inside: avoid; }
+.long-read:last-child { border-bottom: 0; }
+.long-read h3 { margin: 0 0 2mm; font-family: var(--display); letter-spacing: -.04em; line-height: 1; }
+.long-read h3 { font-size: 15pt; }
+.long-read-body { columns: 3; column-gap: 5mm; column-rule: var(--hairline) solid var(--shade); }
+.long-read-body p { margin: 0 0 1.8mm; font-size: 8.4pt; line-height: 1.36; text-align: justify; hyphens: auto; }
+.long-read-body .why-it-matters { break-inside: avoid; text-align: left; }

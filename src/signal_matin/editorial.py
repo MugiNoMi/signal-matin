@@ -9,14 +9,18 @@ from __future__ import annotations
 
 import json
 import os
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
+from .connectors.article_text import fetch_article_text
 from .connectors.gmail import MailContent
 from .models import (
     DataSourceStatus, DataState, EditorialBlock, MailDigest, MailItem, MorningEdition, NewsItem,
 )
 
 DEFAULT_MODEL = "claude-opus-5-5"
+# ~245 mots : trois articles développés tiennent alors sur une seule page A4.
+LONG_TEXT_MAX = 1550
 
 TONES = {
     "complice": (
@@ -36,7 +40,10 @@ Ton travail :
 (700 caractères au maximum, il doit tenir en bas de la une) qui relie les trois ou quatre \
 informations majeures du matin et dit ce qu'il faut en retenir.
 2. Pour chaque dépêche, un résumé propre de 2 à 3 phrases, puis une phrase « pourquoi c'est \
-important » qui donne l'enjeu ou ce que ça change concrètement.
+important » qui donne l'enjeu ou ce que ça change concrètement. Quand une dépêche fournit \
+« texte_complet », écris aussi « long_text » : un véritable article de 220 à 250 mots, en 3 ou \
+4 paragraphes séparés par une ligne vide (les faits, le contexte, les réactions, la suite), \
+fondé uniquement sur ce texte. Sinon, laisse « long_text » vide.
 3. Une courte lecture de la veille tech et IA (3 à 4 phrases).
 4. Une courte lecture des marchés (3 à 4 phrases) : ce qui a bougé et les explications que les \
 dépêches permettent d'avancer.
@@ -75,8 +82,9 @@ SCHEMA: dict[str, Any] = {
                     "id": {"type": "string"},
                     "summary": {"type": "string"},
                     "why_it_matters": {"type": "string"},
+                    "long_text": {"type": "string"},
                 },
-                "required": ["id", "summary", "why_it_matters"],
+                "required": ["id", "summary", "why_it_matters", "long_text"],
                 "additionalProperties": False,
             },
         },
@@ -160,14 +168,32 @@ def _pick_ephemeris(edition: MorningEdition, result: dict[str, Any]) -> MorningE
         update={"ephemeris": chosen})})
 
 
+def _full_texts(edition: MorningEdition, count: int, max_chars: int = 6000) -> dict[str, str]:
+    """Texte complet des brèves annoncées en une, développées en page de détail."""
+    wanted = {f"n{index}": item
+              for index, item in enumerate(edition.news.all_secondary()[:count], 1)
+              if item.source.url}
+
+    def read(item: NewsItem) -> str:
+        try:
+            return fetch_article_text(str(item.source.url))[:max_chars]
+        except Exception:
+            return ""  # page indisponible : Claude garde le résumé court
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        texts = dict(zip(wanted, pool.map(read, wanted.values())))
+    return {key: text for key, text in texts.items() if len(text) > 300}
+
+
 def _payload(edition: MorningEdition, articles: dict[str, NewsItem],
-             mails: dict[str, MailContent]) -> str:
+             mails: dict[str, MailContent], full_texts: dict[str, str] | None = None) -> str:
     markets = edition.markets
     data = {
         "date": edition.edition.date.isoformat(),
         "depeches": [
             {"id": key, "rubrique": item.category, "source": item.source.name,
-             "titre": item.title, "extrait": item.expanded_summary or item.summary}
+             "titre": item.title, "extrait": item.expanded_summary or item.summary,
+             **({"texte_complet": full_texts[key]} if key in (full_texts or {}) else {})}
             for key, item in articles.items()
         ],
         "marches": {
@@ -218,9 +244,11 @@ def _apply(edition: MorningEdition, articles: dict[str, NewsItem], result: dict[
         summary = " ".join(str(entry.get("summary") or "").split())
         if item is None or not summary:
             continue
+        paragraphs = [" ".join(part.split()) for part in str(entry.get("long_text") or "").split("\n\n")]
+        long_text = _cap("\n\n".join(part for part in paragraphs if part), LONG_TEXT_MAX)
         rewritten[id(item)] = item.model_copy(update={
             "summary": summary[:1600],
-            "expanded_summary": "",
+            "expanded_summary": long_text[:3200],
             "why_it_matters": " ".join(str(entry.get("why_it_matters") or "").split())[:400],
         })
 
@@ -251,6 +279,14 @@ def _apply(edition: MorningEdition, articles: dict[str, NewsItem], result: dict[
     return edition.model_copy(update={
         "news": news, "tech_news": tech_news, "tech": tech, "editorial": block, "local": local,
     })
+
+
+def _cap(text: str, limit: int) -> str:
+    """Coupe à la dernière fin de phrase avant la limite."""
+    if len(text) <= limit:
+        return text
+    cut = max(text.rfind(mark, 0, limit) for mark in (". ", "! ", "? ", ".\n"))
+    return text[:cut + 1] if cut > 0 else text[:limit].rsplit(" ", 1)[0] + "…"
 
 
 def _status(state: DataState, detail: str, count: int = 0) -> DataSourceStatus:
@@ -295,7 +331,9 @@ def rediger_avec_claude(edition: MorningEdition, config: dict, client: Any = Non
                 "format": {"type": "json_schema", "schema": SCHEMA},
             },
             system=system,
-            messages=[{"role": "user", "content": _payload(edition, articles, mail_ids)}],
+            messages=[{"role": "user", "content": _payload(
+                edition, articles, mail_ids,
+                _full_texts(edition, int(config.get("develop", 3))))}],
         )
     except Exception as error:  # l'édition sort sans rédaction plutôt que pas du tout
         return edition, _status(DataState.UNAVAILABLE,

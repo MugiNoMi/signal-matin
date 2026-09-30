@@ -33,7 +33,7 @@ def _answer(edition):
     ids = ["n0", "n1", "t1"]
     return {
         "editorial": {"title": "Ce matin", "text": "Trois infos à retenir."},
-        "items": [{"id": i, "summary": f"Résumé {i}.", "why_it_matters": f"Enjeu {i}."}
+        "items": [{"id": i, "summary": f"Résumé {i}.", "why_it_matters": f"Enjeu {i}.", "long_text": ""}
                   for i in ids] + [{"id": "inconnu", "summary": "x", "why_it_matters": "y"}],
         "tech_insight": "La tech bouge.",
         "markets_insight": "Les marchés hésitent.",
@@ -86,3 +86,28 @@ def test_missing_api_key_is_reported(monkeypatch):
     edition = _edition()
     updated, status = rediger_avec_claude(edition, {})
     assert updated is edition and "ANTHROPIC_API_KEY" in status.detail
+
+
+def test_front_briefs_get_full_text_and_a_capped_long_version(monkeypatch):
+    from signal_matin import editorial
+
+    monkeypatch.setattr(editorial, "fetch_article_text",
+                        lambda url: "Texte complet de l'article. " * 40)
+    edition = _edition()
+    long_text = "\n\n".join(["Premier paragraphe. " * 30, "Deuxième paragraphe. " * 30,
+                             "Troisième paragraphe. " * 30])
+    answer = _answer(edition)
+    answer["items"] = [{"id": "n1", "summary": "Résumé.", "why_it_matters": "Enjeu.",
+                        "long_text": long_text}]
+    client = FakeClient(answer)
+    updated, _ = rediger_avec_claude(edition, {}, client=client)
+
+    sent = json.loads(client.calls[0]["messages"][0]["content"])["depeches"]
+    with_text = [d["id"] for d in sent if "texte_complet" in d]
+    assert with_text == ["n1", "n2", "n3"]  # les trois brèves de la une, pas la une
+    developed = updated.news.all_secondary()[0].expanded_summary
+    assert len(developed) <= editorial.LONG_TEXT_MAX and developed.endswith(".")
+    assert developed.startswith("Premier paragraphe.") and "\n\n" in developed
+
+    html = render_html(normaliser_edition(updated, mode="compact"))
+    assert 'class="long-read"' in html
