@@ -616,3 +616,5 @@ footer { position: absolute; left: 11mm; right: 11mm; bottom: 6mm; display: flex
 .long-read-body { columns: 3; column-gap: 5mm; column-rule: var(--hairline) solid var(--shade); }
 .long-read-body p { margin: 0 0 1.8mm; font-size: 8.4pt; line-height: 1.36; text-align: justify; hyphens: auto; }
 .long-read-body .why-it-matters { break-inside: avoid; text-align: left; }
+.news-opening.is-single { grid-template-columns: 1fr; }
+.news-followups .news-card p { margin: 0 0 1mm; }

@@ -33,7 +33,7 @@ def _answer(edition):
     ids = ["n0", "n1", "t1"]
     return {
         "editorial": {"title": "Ce matin", "text": "Trois infos à retenir."},
-        "items": [{"id": i, "summary": f"Résumé {i}.", "why_it_matters": f"Enjeu {i}.", "long_text": ""}
+        "items": [{"id": i, "summary": f"Résumé {i}.", "why_it_matters": f"Enjeu {i}.", "long_text": "", "print": True}
                   for i in ids] + [{"id": "inconnu", "summary": "x", "why_it_matters": "y"}],
         "tech_insight": "La tech bouge.",
         "markets_insight": "Les marchés hésitent.",
@@ -98,7 +98,7 @@ def test_front_briefs_get_full_text_and_a_capped_long_version(monkeypatch):
                              "Troisième paragraphe. " * 30])
     answer = _answer(edition)
     answer["items"] = [{"id": "n1", "summary": "Résumé.", "why_it_matters": "Enjeu.",
-                        "long_text": long_text}]
+                        "long_text": long_text, "print": True}]
     client = FakeClient(answer)
     updated, _ = rediger_avec_claude(edition, {}, client=client)
 
@@ -111,3 +111,21 @@ def test_front_briefs_get_full_text_and_a_capped_long_version(monkeypatch):
 
     html = render_html(normaliser_edition(updated, mode="compact"))
     assert 'class="long-read"' in html
+
+
+def test_items_without_substance_are_dropped_but_never_the_lead():
+    edition = _edition()
+    answer = _answer(edition)
+    answer["items"] = [
+        {"id": "n0", "summary": "Une.", "why_it_matters": "", "long_text": "", "print": False},
+        {"id": "n2", "summary": "Émission.", "why_it_matters": "", "long_text": "", "print": False},
+        {"id": "t1", "summary": "Promo.", "why_it_matters": "", "long_text": "", "print": False},
+    ]
+    dropped_news = edition.news.all_secondary()[1].title
+    dropped_tech = edition.tech_news[0].title
+    updated, _ = rediger_avec_claude(edition, {}, client=FakeClient(answer))
+    assert updated.news.lead is not None and updated.news.lead.summary == "Une."
+    assert dropped_news not in [item.title for item in updated.news.all_secondary()]
+    assert len(updated.news.all_secondary()) == len(edition.news.all_secondary()) - 1
+    assert dropped_tech not in [item.title for item in updated.tech_news]
+    assert dropped_tech not in [digest.title for digest in updated.tech]

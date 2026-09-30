@@ -39,8 +39,10 @@ Ton travail :
 1. Un édito court : un titre de moins de 70 caractères et un texte de 5 à 6 phrases \
 (700 caractères au maximum, il doit tenir en bas de la une) qui relie les trois ou quatre \
 informations majeures du matin et dit ce qu'il faut en retenir.
-2. Pour chaque dépêche, un résumé propre de 2 à 3 phrases, puis une phrase « pourquoi c'est \
-important » qui donne l'enjeu ou ce que ça change concrètement. Quand une dépêche fournit \
+2. Pour chaque dépêche, un résumé propre de 3 à 4 phrases (60 à 90 mots) qui donne les faits \
+essentiels, puis une phrase « pourquoi c'est important » qui donne l'enjeu ou ce que ça change \
+concrètement. Mets « print » à false pour une dépêche sans substance à imprimer (annonce \
+d'émission ou de podcast, contenu promotionnel, extrait vide) ; sinon true. Quand une dépêche fournit \
 « texte_complet », écris aussi « long_text » : un véritable article de 220 à 250 mots, en 3 ou \
 4 paragraphes séparés par une ligne vide (les faits, le contexte, les réactions, la suite), \
 fondé uniquement sur ce texte. Sinon, laisse « long_text » vide.
@@ -83,8 +85,9 @@ SCHEMA: dict[str, Any] = {
                     "summary": {"type": "string"},
                     "why_it_matters": {"type": "string"},
                     "long_text": {"type": "string"},
+                    "print": {"type": "boolean"},
                 },
-                "required": ["id", "summary", "why_it_matters", "long_text"],
+                "required": ["id", "summary", "why_it_matters", "long_text", "print"],
                 "additionalProperties": False,
             },
         },
@@ -239,6 +242,10 @@ def _mail_digest(mails: dict[str, MailContent], result: dict[str, Any],
 def _apply(edition: MorningEdition, articles: dict[str, NewsItem], result: dict[str, Any],
            author: str) -> MorningEdition:
     rewritten: dict[int, NewsItem] = {}
+    # Dépêches sans substance écartées (jamais la une).
+    dropped = {id(articles[entry["id"]]) for entry in result.get("items", [])
+               if entry.get("print") is False and entry.get("id") in articles
+               and articles[entry["id"]] is not edition.news.lead}
     for entry in result.get("items", []):
         item = articles.get(entry.get("id", ""))
         summary = " ".join(str(entry.get("summary") or "").split())
@@ -255,18 +262,23 @@ def _apply(edition: MorningEdition, articles: dict[str, NewsItem], result: dict[
     def swap(item: NewsItem) -> NewsItem:
         return rewritten.get(id(item), item)
 
+    def keep(items: list[NewsItem]) -> list[NewsItem]:
+        return [swap(item) for item in items if id(item) not in dropped]
+
     news = edition.news
     news = news.model_copy(update={
         "lead": swap(news.lead) if news.lead else None,
-        **{group: [swap(item) for item in getattr(news, group)]
+        **{group: keep(getattr(news, group))
            for group in ("world", "france", "economy", "society", "science", "culture")},
     })
-    tech_news = [swap(item) for item in edition.tech_news]
-    local = edition.local.model_copy(update={"news": [swap(item) for item in edition.local.news]})
+    tech_news = keep(edition.tech_news)
+    local = edition.local.model_copy(update={"news": keep(edition.local.news)})
     # Le résumé « IA & tech » des pages courtes reprend les textes réécrits.
     by_title = {item.title: item for item in tech_news}
+    dropped_titles = {item.title for item in edition.tech_news if id(item) in dropped}
     tech = [digest.model_copy(update={"summary": by_title[digest.title].summary})
-            if digest.title in by_title else digest for digest in edition.tech]
+            if digest.title in by_title else digest
+            for digest in edition.tech if digest.title not in dropped_titles]
 
     editorial = result.get("editorial") or {}
     block = EditorialBlock(

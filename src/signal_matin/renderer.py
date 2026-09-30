@@ -260,7 +260,7 @@ def news_lead(item: NewsItem | None, summary_limit: int = 520) -> str:
 
 
 def news_card(item: NewsItem, summary_limit: int = 280, compact: bool = False) -> str:
-    summary = "" if compact else f'<p>{_e(_truncate(item.summary, summary_limit))}</p>'
+    summary = "" if compact else f'<p>{_e(_truncate(item.summary, summary_limit))}</p>{why_line(item)}'
     return f"""
     <article class="news-card" data-importance="{item.importance.value}">
       <p class="article-meta">{_source_line(item)}</p>
@@ -1228,7 +1228,12 @@ def _page_compact(edition: MorningEdition, number: int, start: int = 0) -> str:
     body += '</div><div>'
     body += mail_block(edition, 3)
     compact_news = edition.news.all_secondary()[start:]
-    if compact_news:
+    if compact_news and edition.editorial:
+        # Résumés rédigés : chaque article garde son texte et son enjeu.
+        selected = compact_news[:8]
+        body += f'<div class="news-opening is-single">{news_feature(selected[0], 420)}</div>'
+        body += news_followups(selected[1:], summary_limit=620)
+    elif compact_news:
         selected = compact_news[:8]
         body += news_opening(selected, compact=True)
         body += news_followups(selected[3:], compact=True)
@@ -1240,7 +1245,7 @@ def _page_compact(edition: MorningEdition, number: int, start: int = 0) -> str:
     body += '</div></div>'
     extras = extras_block(edition, limit=2)
     body += extras
-    if not extras:
+    if not extras and not edition.editorial:
         body += '<div class="compact-art-floor">' + curiosity_engraving() + '</div>'
     return _page(edition, number, "La suite du matin", body, slug="compact-tail")
 

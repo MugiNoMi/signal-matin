@@ -10,16 +10,20 @@ from signal_matin.pdf import generer_pdf, inspecter_html
 from signal_matin.renderer import render_html
 
 
-EXPECTED_PAGES = {
+# Pages écrites dans le HTML, avant la pagination adaptative.
+EXPECTED_SHEETS = {
     DensityMode.COMPACT: 7,
     DensityMode.STANDARD: 10,
     DensityMode.EXTENDED: 10,
 }
+# Pages finales : en compact, les brèves rédigées de « La suite du matin »
+# continuent sur une page de suite.
+EXPECTED_PAGES = {**EXPECTED_SHEETS, DensityMode.COMPACT: 8}
 
 
 def test_html_has_expected_pages_and_sections():
     demo = construire_demo(dt.date(2026, 9, 26))
-    for mode, count in EXPECTED_PAGES.items():
+    for mode, count in EXPECTED_SHEETS.items():
         edition = normaliser_edition(demo, mode=mode)
         html = render_html(edition)
         assert html.count('class="sheet ') == count
