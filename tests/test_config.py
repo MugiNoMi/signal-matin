@@ -1,3 +1,4 @@
+from signal_matin import cli
 from signal_matin.config import load_config, setting
 
 
@@ -21,3 +22,19 @@ def test_paper_density_from_config_applies_when_mode_is_auto(tmp_path, monkeypat
     seen.clear()
     cli.main(["generate", "--demo", "--mode", "standard", "--config", str(path)])
     assert seen["mode"] == "standard"
+
+
+def test_generate_still_produces_a_pdf_when_a_page_overflows(tmp_path, monkeypatch):
+    calls = []
+
+    def fake_pdf(edition, pdf_path, html_path=None, verifier_debordement=True):
+        calls.append(verifier_debordement)
+        if verifier_debordement:
+            raise RuntimeError("Contenu trop long sur les pages : 5")
+        return pdf_path
+
+    monkeypatch.setattr(cli, "generer_pdf", fake_pdf)
+    monkeypatch.setattr(cli, "write_html", lambda edition, path: path)
+    monkeypatch.setattr(cli, "ecrire_edition", lambda edition, path: path)
+    assert cli.main(["generate", "--demo", "--output", str(tmp_path / "x.pdf")]) == 0
+    assert calls == [True, False]

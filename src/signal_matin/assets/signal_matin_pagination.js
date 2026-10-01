@@ -98,7 +98,9 @@
       ".news-grid > .news-card",
       ".brief-list > .news-card",
       ".learning-strip > .learning-card",
-      ".adaptive-flow > article"
+      ".adaptive-flow > article",
+      ".local-news > .local-card",
+      ".local-side > section"
     ];
     return [...new Set(
       selectors.flatMap((selector) => [...content.querySelectorAll(selector)])

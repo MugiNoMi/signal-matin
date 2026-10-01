@@ -290,7 +290,14 @@ def _produce(args, config: dict) -> int:
             webbrowser.open(html_path.resolve().as_uri())
         print(f"Preview generee: {html_path}")
         return 0
-    generer_pdf(edition, pdf_path, html_path=html_path)
+    try:
+        generer_pdf(edition, pdf_path, html_path=html_path)
+    except RuntimeError as error:
+        if not str(error).startswith("Contenu trop long"):
+            raise
+        # Mieux vaut un journal avec une page un peu serrée que pas de journal du tout.
+        print(f"Attention : {error}. PDF généré sans contrôle de débordement.", file=sys.stderr)
+        generer_pdf(edition, pdf_path, html_path=html_path, verifier_debordement=False)
     if args.command == "print":
         printer = args.printer or str(setting(config, "printing.printer", "") or "")
         duplex = args.duplex or bool(setting(config, "printing.duplex", False))
