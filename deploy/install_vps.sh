@@ -18,6 +18,10 @@ cd /opt/signal-matin
 [ -f config.yaml ] || cp app/config.example.yaml config.yaml
 [ -f .env ] || { touch .env; chmod 600 .env; }
 docker build -t signal-matin:latest app
+# Conteneur témoin, jamais démarré : l'image reste « utilisée » et échappe aux
+# nettoyages « docker image prune -a » programmés sur le serveur.
+docker rm -f signal-matin-keep >/dev/null 2>&1 || true
+docker create --name signal-matin-keep signal-matin:latest >/dev/null
 install -m 644 app/deploy/systemd/signal-matin.service /etc/systemd/system/
 install -m 644 app/deploy/systemd/signal-matin.timer /etc/systemd/system/
 systemctl daemon-reload

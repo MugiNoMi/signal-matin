@@ -7,6 +7,10 @@ Requires=docker.service
 [Service]
 Type=oneshot
 WorkingDirectory=/opt/signal-matin
+# Un nettoyage « docker image prune -a » peut supprimer l'image entre deux
+# matins : on la reconstruit si besoin (premier téléchargement : quelques minutes).
+TimeoutStartSec=30min
+ExecStartPre=/bin/sh -c 'docker image inspect signal-matin:latest >/dev/null 2>&1 || docker build -t signal-matin:latest /opt/signal-matin/app'
 ExecStart=/usr/bin/docker run --rm --name signal-matin \
   -v /opt/signal-matin/config.yaml:/app/config.yaml:ro \
   -v /opt/signal-matin/.env:/app/.env:ro \
