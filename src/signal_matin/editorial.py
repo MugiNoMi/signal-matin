@@ -274,9 +274,9 @@ def _apply(edition: MorningEdition, articles: dict[str, NewsItem], result: dict[
     tech_news = keep(edition.tech_news)
     local = edition.local.model_copy(update={"news": keep(edition.local.news)})
     # Le résumé « IA & tech » des pages courtes reprend les textes réécrits.
-    by_title = {item.title: item for item in tech_news}
-    dropped_titles = {item.title for item in edition.tech_news if id(item) in dropped}
-    tech = [digest.model_copy(update={"summary": by_title[digest.title].summary})
+    dropped_titles = {item.title[:220] for item in edition.tech_news if id(item) in dropped}
+    by_title = {item.title[:220]: item for item in tech_news}
+    tech = [digest.model_copy(update={"summary": by_title[digest.title].summary[:900]})
             if digest.title in by_title else digest
             for digest in edition.tech if digest.title not in dropped_titles]
 

@@ -60,3 +60,22 @@ def test_ics_empty_day_is_live_but_unreadable_source_is_not(tmp_path):
     assert "aucun événement" in status.detail
     _, status = collect_ics(["absent.ics"], now, tmp_path)
     assert status.state == DataState.UNAVAILABLE
+
+
+def test_live_edition_accepts_very_long_tech_titles(monkeypatch, tmp_path):
+    from signal_matin import pipeline
+    from signal_matin.models import NewsItem, SourceRef
+
+    long_item = NewsItem(title="T" * 235, summary="Résumé " * 200, category="Tech",
+                         source=SourceRef(name="Source fictive"))
+    status = pipeline.DataSourceStatus(name="Technologie & IA", state=DataState.LIVE)
+
+    def fake_rss(feeds, now, **kwargs):
+        if kwargs.get("status_name") == "Technologie & IA":
+            return [long_item], status
+        return [], status
+
+    monkeypatch.setattr(pipeline, "collect_rss", fake_rss)
+    config = {"modules": {"weather": False, "calendar": False, "tasks": False}}
+    edition = pipeline.build_live(config, now=PARIS_MORNING, root=tmp_path)
+    assert len(edition.tech[0].title) == 220 and len(edition.tech[0].summary) == 900

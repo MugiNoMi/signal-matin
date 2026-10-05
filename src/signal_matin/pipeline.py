@@ -157,8 +157,9 @@ def build_live(
         mail_digest = MailDigest(unread=len(mails), fyi=[mail.item for mail in mails[:8]])
         statuses.append(mail_status)
 
+    # DigestItem est plus strict que NewsItem (220 / 900 caractères) : on coupe à la copie.
     tech_digest = [DigestItem(
-        title=item.title, summary=item.summary, source=item.source,
+        title=item.title[:220], summary=item.summary[:900], source=item.source,
         importance=item.importance,
     ) for item in tech_news]
     curiosities = [
