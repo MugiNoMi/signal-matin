@@ -77,5 +77,6 @@ def test_live_edition_accepts_very_long_tech_titles(monkeypatch, tmp_path):
 
     monkeypatch.setattr(pipeline, "collect_rss", fake_rss)
     config = {"modules": {"weather": False, "calendar": False, "tasks": False}}
-    edition = pipeline.build_live(config, now=PARIS_MORNING, root=tmp_path)
+    now = dt.datetime(2026, 10, 5, 6, 50, tzinfo=dt.timezone.utc)
+    edition = pipeline.build_live(config, now=now, root=tmp_path)
     assert len(edition.tech[0].title) == 220 and len(edition.tech[0].summary) == 900
