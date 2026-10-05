@@ -36,6 +36,10 @@ class DataState(str, Enum):
     DISABLED = "disabled"
 
 
+# Préfixe du détail d'une rubrique retirée après une erreur (affiché en une).
+FAILED_SECTION = "Rubrique retirée"
+
+
 class DataSourceStatus(Modele):
     name: str = Field(min_length=1, max_length=80)
     state: DataState

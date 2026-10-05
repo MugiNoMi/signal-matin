@@ -618,3 +618,6 @@ footer { position: absolute; left: 11mm; right: 11mm; bottom: 6mm; display: flex
 .long-read-body .why-it-matters { break-inside: avoid; text-align: left; }
 .news-opening.is-single { grid-template-columns: 1fr; }
 .news-followups .news-card p { margin: 0 0 1mm; }
+
+/* Rubriques retirées après un incident */
+.edition-notice { margin: -1mm 0 1.6mm; font: italic 6.6pt var(--sans); color: var(--muted); }

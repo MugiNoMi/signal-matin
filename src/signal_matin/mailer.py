@@ -88,7 +88,7 @@ def _message(settings: EmailSettings, to: list[str], subject: str, body: str,
 
 
 def build_edition_messages(settings: EmailSettings, pdf_path: Path,
-                           date: dt.date) -> list[EmailMessage]:
+                           date: dt.date, note: str = "") -> list[EmailMessage]:
     subject = f"{settings.title} — {date.strftime('%d/%m/%Y')}"
     messages = []
     if settings.printer_to:
@@ -96,7 +96,10 @@ def build_edition_messages(settings: EmailSettings, pdf_path: Path,
         # message : il reste vide pour n'obtenir que le journal.
         messages.append(_message(settings, settings.printer_to, subject, "", pdf_path))
     if settings.copy_to:
-        body = "Bonjour,\n\nL'édition du jour est en pièce jointe.\n\n" + settings.title
+        body = "Bonjour,\n\nL'édition du jour est en pièce jointe.\n\n"
+        if note:
+            body += note + "\n\n"
+        body += settings.title
         messages.append(_message(settings, settings.copy_to, subject, body, pdf_path))
     return messages
 

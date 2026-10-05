@@ -184,7 +184,7 @@ def _full_texts(edition: MorningEdition, count: int, max_chars: int = 6000) -> d
             return ""  # page indisponible : Claude garde le résumé court
 
     with ThreadPoolExecutor(max_workers=4) as pool:
-        texts = dict(zip(wanted, pool.map(read, wanted.values())))
+        texts = dict(zip(wanted, pool.map(read, wanted.values()), strict=True))
     return {key: text for key, text in texts.items() if len(text) > 300}
 
 

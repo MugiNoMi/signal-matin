@@ -129,7 +129,7 @@ def _closes(result: dict[str, Any], now: dt.datetime) -> list[float]:
     session = (meta.get("currentTradingPeriod") or {}).get("regular") or {}
     session_open = session.get("start") is not None and now.timestamp() < session.get("end", 0)
     values = []
-    for stamp, value in zip(result.get("timestamp") or [], quote.get("close") or []):
+    for stamp, value in zip(result.get("timestamp") or [], quote.get("close") or [], strict=False):
         if value is None:
             continue
         if last_trade is not None and stamp > last_trade:
@@ -241,7 +241,7 @@ def collect_markets(config: dict, now: dt.datetime) -> tuple[MarketsPage, DataSo
         quotes = list(pool.map(lambda spec: _safe(_quote, spec, now), specs))
     page.quotes = [q for q in quotes if q]
     if len(page.quotes) < len(specs):
-        missing = [s["symbol"] for s, q in zip(specs, quotes) if not q]
+        missing = [s["symbol"] for s, q in zip(specs, quotes, strict=True) if not q]
         failures.append("cours " + ", ".join(missing))
 
     movers = config.get("movers") or {}

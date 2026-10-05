@@ -13,7 +13,7 @@ from .connectors import (
 from .daily_learning import construire_apprentissage_du_jour
 from .editorial import rediger_avec_claude
 from .models import (
-    DataSourceStatus, DataState, DigestItem, EditionMeta, Extras, Importance,
+    FAILED_SECTION, DataSourceStatus, DataState, DigestItem, EditionMeta, Extras, Importance,
     LearningPage, LocalPage, MailDigest, MarketsPage, MorningEdition, NewsBundle, NewsItem,
     PersonalBlock, QuoteBlock, Recommendation, SourceRef, SportPage,
 )
@@ -26,6 +26,18 @@ def _enabled(config: dict, name: str, default: bool = True) -> bool:
 
 def _disabled(name: str) -> DataSourceStatus:
     return DataSourceStatus(name=name, state=DataState.DISABLED, detail="Module desactive.")
+
+
+def _guarded(statuses: list[DataSourceStatus], name: str, collect, fallback):
+    """Exécute une rubrique ; si elle plante, elle est retirée au lieu de bloquer l'édition."""
+    try:
+        return collect()
+    except Exception as error:
+        statuses.append(DataSourceStatus(
+            name=name, state=DataState.UNAVAILABLE,
+            detail=f"{FAILED_SECTION} ce matin (erreur {type(error).__name__}).",
+        ))
+        return fallback
 
 
 def _bundle(items: list[NewsItem]) -> NewsBundle:
@@ -66,102 +78,134 @@ def build_live(
     now = now or dt.datetime.now().astimezone()
     statuses: list[DataSourceStatus] = []
 
-    if _enabled(config, "weather"):
-        weather, status = collect_weather(setting(config, "weather", {}) or {})
-    else:
-        weather, status = None, _disabled("Meteo")
-    statuses.append(status)
+    def weather_section():
+        if _enabled(config, "weather"):
+            weather, status = collect_weather(setting(config, "weather", {}) or {})
+        else:
+            weather, status = None, _disabled("Meteo")
+        statuses.append(status)
+        return weather
 
-    agenda = []
-    if _enabled(config, "calendar"):
-        ics_events, ics_status = collect_ics(
-            setting(config, "calendar.ics", []) or [], now, root)
-        statuses.append(ics_status)
-        agenda.extend(ics_events)
-        google_config = setting(config, "calendar.google", {}) or {}
-        if bool(google_config.get("enabled", False)):
-            google_events, google_status = collect_google_calendar(google_config, now, root)
-            statuses.append(google_status)
-            agenda.extend(google_events)
-    else:
-        statuses.append(_disabled("Agenda"))
-    agenda.sort(key=lambda item: item.start or now)
+    weather = _guarded(statuses, "Meteo", weather_section, None)
 
-    if _enabled(config, "tasks"):
-        priorities, reminders, task_status = collect_tasks(setting(config, "tasks", {}) or {})
-        google_tasks = setting(config, "tasks.google", {}) or {}
-        if bool(google_tasks.get("enabled", False)):
-            more_priorities, more_reminders, google_status = collect_google_tasks(
-                google_tasks, now, root)
-            priorities, reminders = priorities + more_priorities, reminders + more_reminders
-            statuses.append(google_status)
-    else:
-        priorities, reminders, task_status = [], [], _disabled("Taches")
-    statuses.append(task_status)
+    def agenda_section():
+        agenda = []
+        if _enabled(config, "calendar"):
+            ics_events, ics_status = collect_ics(
+                setting(config, "calendar.ics", []) or [], now, root)
+            statuses.append(ics_status)
+            agenda.extend(ics_events)
+            google_config = setting(config, "calendar.google", {}) or {}
+            if bool(google_config.get("enabled", False)):
+                google_events, google_status = collect_google_calendar(google_config, now, root)
+                statuses.append(google_status)
+                agenda.extend(google_events)
+        else:
+            statuses.append(_disabled("Agenda"))
+        agenda.sort(key=lambda item: item.start or now)
+        return agenda
 
-    if _enabled(config, "news") and _enabled(config, "rss"):
-        news_items, news_status = collect_rss(
-            setting(config, "news.feeds", []) or [], now,
-            limit=int(setting(config, "news.limit", 12) or 12),
-            max_age_hours=int(setting(config, "news.max_age_hours", 72) or 72),
-            status_name="Actualites",
-        )
-    else:
-        news_items, news_status = [], _disabled("Actualites")
-    statuses.append(news_status)
+    agenda = _guarded(statuses, "Agenda", agenda_section, [])
 
-    if _enabled(config, "tech") and _enabled(config, "rss"):
-        tech_news, tech_status = collect_rss(
-            setting(config, "tech.feeds", []) or [], now,
-            limit=int(setting(config, "tech.limit", 6) or 6),
-            max_age_hours=int(setting(config, "tech.max_age_hours", 96) or 96),
-            status_name="Technologie & IA",
-        )
-    else:
-        tech_news, tech_status = [], _disabled("Technologie & IA")
-    statuses.append(tech_status)
+    def tasks_section():
+        if _enabled(config, "tasks"):
+            priorities, reminders, task_status = collect_tasks(setting(config, "tasks", {}) or {})
+            google_tasks = setting(config, "tasks.google", {}) or {}
+            if bool(google_tasks.get("enabled", False)):
+                more_priorities, more_reminders, google_status = collect_google_tasks(
+                    google_tasks, now, root)
+                priorities, reminders = priorities + more_priorities, reminders + more_reminders
+                statuses.append(google_status)
+        else:
+            priorities, reminders, task_status = [], [], _disabled("Taches")
+        statuses.append(task_status)
+        return priorities, reminders
 
-    # Opt-in : le sport n'apparaît que si la section sport est configurée.
-    if _enabled(config, "sport", False):
-        sport, sport_status = collect_sport(setting(config, "sport", {}) or {}, now)
-    else:
-        sport, sport_status = SportPage(), _disabled("Sport")
-    statuses.append(sport_status)
+    priorities, reminders = _guarded(statuses, "Taches", tasks_section, ([], []))
 
-    if _enabled(config, "markets", False):
-        markets, markets_status = collect_markets(setting(config, "markets", {}) or {}, now)
-    else:
-        markets, markets_status = MarketsPage(), _disabled("Marches")
-    statuses.append(markets_status)
+    def news_section():
+        if _enabled(config, "news") and _enabled(config, "rss"):
+            news_items, news_status = collect_rss(
+                setting(config, "news.feeds", []) or [], now,
+                limit=int(setting(config, "news.limit", 12) or 12),
+                max_age_hours=int(setting(config, "news.max_age_hours", 72) or 72),
+                status_name="Actualites",
+            )
+        else:
+            news_items, news_status = [], _disabled("Actualites")
+        statuses.append(news_status)
+        return news_items
 
-    local = LocalPage()
-    if _enabled(config, "local", False):
+    news_items = _guarded(statuses, "Actualites", news_section, [])
+
+    def tech_section():
+        if _enabled(config, "tech") and _enabled(config, "rss"):
+            tech_news, tech_status = collect_rss(
+                setting(config, "tech.feeds", []) or [], now,
+                limit=int(setting(config, "tech.limit", 6) or 6),
+                max_age_hours=int(setting(config, "tech.max_age_hours", 96) or 96),
+                status_name="Technologie & IA",
+            )
+        else:
+            tech_news, tech_status = [], _disabled("Technologie & IA")
+        # DigestItem est plus strict que NewsItem (220 / 900 caractères) : on coupe à la copie.
+        tech_digest = [DigestItem(
+            title=item.title[:220], summary=item.summary[:900], source=item.source,
+            importance=item.importance,
+        ) for item in tech_news]
+        statuses.append(tech_status)
+        return tech_news, tech_digest
+
+    tech_news, tech_digest = _guarded(statuses, "Technologie & IA", tech_section, ([], []))
+
+    def sport_section():
+        # Opt-in : le sport n'apparaît que si la section sport est configurée.
+        if _enabled(config, "sport", False):
+            sport, sport_status = collect_sport(setting(config, "sport", {}) or {}, now)
+        else:
+            sport, sport_status = SportPage(), _disabled("Sport")
+        statuses.append(sport_status)
+        return sport
+
+    sport = _guarded(statuses, "Sport", sport_section, SportPage())
+
+    def markets_section():
+        if _enabled(config, "markets", False):
+            markets, markets_status = collect_markets(setting(config, "markets", {}) or {}, now)
+        else:
+            markets, markets_status = MarketsPage(), _disabled("Marches")
+        statuses.append(markets_status)
+        return markets
+
+    markets = _guarded(statuses, "Marches", markets_section, MarketsPage())
+
+    def local_section():
+        if not _enabled(config, "local", False):
+            return LocalPage()
         local_config = setting(config, "local", {}) or {}
         ephemeris, ephemeris_status = collect_ephemeris(
             local_config, now, setting(config, "weather.latitude"),
             setting(config, "weather.longitude"))
         local_news, local_news_status = collect_local_news(local_config, now)
         events, events_status = collect_local_events(local_config.get("events") or {}, now)
-        local = LocalPage(
-            title=str(local_config.get("title") or "Près de chez toi"),
-            news=local_news, events=events,
-            ephemeris=ephemeris,
-        )
         statuses.extend([ephemeris_status, local_news_status, events_status])
+        return LocalPage(
+            title=str(local_config.get("title") or "Près de chez toi"),
+            news=local_news, events=events, ephemeris=ephemeris,
+        )
 
-    mails = []
-    mail_digest = MailDigest()
-    if _enabled(config, "mail", False):
+    local = _guarded(statuses, "Local", local_section, LocalPage())
+
+    def mail_section():
+        if not _enabled(config, "mail", False):
+            return [], MailDigest()
         mails, mail_status = collect_mail(setting(config, "mail", {}) or {}, now)
-        # Sans rédaction IA, une simple liste expéditeur + objet.
-        mail_digest = MailDigest(unread=len(mails), fyi=[mail.item for mail in mails[:8]])
         statuses.append(mail_status)
+        # Sans rédaction IA, une simple liste expéditeur + objet.
+        return mails, MailDigest(unread=len(mails), fyi=[mail.item for mail in mails[:8]])
 
-    # DigestItem est plus strict que NewsItem (220 / 900 caractères) : on coupe à la copie.
-    tech_digest = [DigestItem(
-        title=item.title[:220], summary=item.summary[:900], source=item.source,
-        importance=item.importance,
-    ) for item in tech_news]
+    mails, mail_digest = _guarded(statuses, "Mails", mail_section, ([], MailDigest()))
+
     curiosities = [
         item for item in news_items
         if item.category.casefold() in {"science", "sciences", "culture"}
@@ -210,9 +254,13 @@ def build_live(
     )
     # En dernier : Claude rédige à partir de tout ce qui a été collecté.
     if _enabled(config, "ai", False):
-        edition, ai_status = rediger_avec_claude(
-            edition, setting(config, "ai", {}) or {}, mails=mails)
-        edition = edition.model_copy(update={"sources": [*edition.sources, ai_status]})
+        ai_statuses: list[DataSourceStatus] = []
+        edition, ai_status = _guarded(
+            ai_statuses, "Redaction IA",
+            lambda: rediger_avec_claude(edition, setting(config, "ai", {}) or {}, mails=mails),
+            (edition, None))
+        edition = edition.model_copy(update={"sources": [
+            *edition.sources, *ai_statuses, *([ai_status] if ai_status else [])]})
     return normaliser_edition(_trim_ephemeris(edition, now), mode=mode)
 
 

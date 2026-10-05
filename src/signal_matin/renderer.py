@@ -12,6 +12,7 @@ import mimetypes
 from pathlib import Path
 
 from .models import (
+    FAILED_SECTION,
     AgendaItem, DensityMode, DigestItem, MorningEdition, NewsItem,
     LocalEvent, MarketMovers, MarketQuote, Recommendation, SportEvent, SportTable, TaskItem,
 )
@@ -603,6 +604,15 @@ def _unit(quote: MarketQuote) -> str:
     return f"\u202f{quote.unit}" if quote.unit else ""
 
 
+def failed_sections_notice(edition: MorningEdition) -> str:
+    names = [source.name for source in edition.sources
+             if source.detail.startswith(FAILED_SECTION)]
+    if not names:
+        return ""
+    return (f'<p class="edition-notice">Indisponible ce matin à la suite d’un incident : '
+            f'{_e(", ".join(names))}.</p>')
+
+
 def market_strip(edition: MorningEdition) -> str:
     quotes = edition.markets.quotes
     if not quotes:
@@ -770,8 +780,9 @@ def sport_front_block(edition: MorningEdition, limit: int = 4) -> str:
 def _sport_table(table: SportTable) -> str:
     def render(rows: list[list[str]]) -> str:
         head = "".join(f"<th>{_e(column)}</th>" for column in table.columns)
+        highlight = ' class="is-highlight"'
         body = "".join(
-            f'<tr{" class=\"is-highlight\"" if table.highlight and table.highlight in row else ""}>'
+            f'<tr{highlight if table.highlight and table.highlight in row else ""}>'
             + "".join(f"<td>{_e(cell)}</td>" for cell in row) + "</tr>"
             for row in rows
         )
@@ -794,8 +805,9 @@ def _page_sport(edition: MorningEdition, number: int) -> str:
     for event in sorted(sport.today, key=_sport_rank):
         groups.setdefault(event.competition, []).append(event)
     for competition, events in groups.items():
+        highlight = ' class="is-highlight"'
         items = "".join(
-            f'<li{" class=\"is-highlight\"" if event.highlight else ""}><time>{_e(event.when)}</time>'
+            f'<li{highlight if event.highlight else ""}><time>{_e(event.when)}</time>'
             f'<div><strong>{_e(event.label)}</strong>'
             f'{f"<small>{_e(event.detail)}</small>" if event.detail else ""}</div></li>'
             for event in events
@@ -867,7 +879,7 @@ def _page_one(edition: MorningEdition) -> str:
     tail = front_footer_band(edition)
     return _page(
         edition, 1, "Le briefing",
-        f'{market_strip(edition)}'
+        f'{failed_sections_notice(edition)}{market_strip(edition)}'
         f'<div class="briefing-grid"><div>{left}</div><div>{right}</div></div>{tail}',
         first=True, slug="front",
     )

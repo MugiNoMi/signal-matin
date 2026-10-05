@@ -246,15 +246,53 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit("Choisis --input ou --demo, pas les deux.")
     if getattr(args, "email", False):
         return _generate_and_email(args, config)
+    if args.command == "generate":
+        _produce_with_fallback(args, config)
+        return 0
     return _produce(args, config)
+
+
+# Version de secours : les rubriques de base, sans source optionnelle ni IA.
+MINIMAL_MODULES = ("weather", "calendar", "tasks", "news", "rss", "games", "tech_vocabulary")
+
+
+def _minimal_config(config: dict) -> dict:
+    modules = dict(config.get("modules") or {})
+    modules = {name: name in MINIMAL_MODULES and bool(modules.get(name, True))
+               for name in {*modules, *MINIMAL_MODULES, "tech", "sport", "markets", "ai",
+                            "mail", "local", "recommendations"}}
+    return {**config, "modules": modules}
+
+
+def _produce_with_fallback(args, config: dict) -> Exception | None:
+    """Produit l'édition ; en cas d'échec d'une édition réelle, produit une version réduite.
+
+    Renvoie l'erreur d'origine si la version réduite a été utilisée, sinon None.
+    """
+    try:
+        _produce(args, config)
+        return None
+    except Exception as error:
+        live = not args.input and not getattr(args, "demo", False) and not config.get("demo", False)
+        if not live:
+            raise
+        print(f"Édition complète impossible ({type(error).__name__}: {error}) ; "
+              "génération de la version réduite.", file=sys.stderr)
+        try:
+            _produce(args, _minimal_config(config))
+        except Exception:
+            raise error from None
+        return error
 
 
 def _generate_and_email(args, config: dict) -> int:
     email_settings = load_email_settings(config)
     try:
-        _produce(args, config)
+        degraded = _produce_with_fallback(args, config)
         pdf_path, _, _ = _paths(args.date, args.output)
-        send(email_settings, build_edition_messages(email_settings, pdf_path, args.date))
+        note = (f"Édition réduite ce matin : la version complète a échoué "
+                f"({type(degraded).__name__}: {degraded}).") if degraded else ""
+        send(email_settings, build_edition_messages(email_settings, pdf_path, args.date, note=note))
     except Exception as error:
         if email_settings.alert_to:
             try:

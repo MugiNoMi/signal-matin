@@ -92,8 +92,9 @@ def _player(competitor: dict, ranks: dict[str, int]) -> str:
 
 
 def _tennis_score(winner: dict, loser: dict) -> str:
-    sets = zip(winner.get("linescores") or [], loser.get("linescores") or [])
-    return " ".join(f"{int(w.get('value', 0))}-{int(l.get('value', 0))}" for w, l in sets)
+    sets = zip(winner.get("linescores") or [], loser.get("linescores") or [], strict=False)
+    return " ".join(f"{int(won.get('value', 0))}-{int(lost.get('value', 0))}"
+                    for won, lost in sets)
 
 
 def _tennis(config: dict, today: dt.date, tz: ZoneInfo) -> list[SportEvent]:
